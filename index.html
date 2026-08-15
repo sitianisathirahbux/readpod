@@ -544,6 +544,8 @@
     let studentName = localStorage.getItem("read_pod_student_name") || "";
     let analyticsLogs = []; // Stores live student records fetched from Google Sheets
     let registeredStudentMap = new Map();
+    let registeredStudentProgressMap = new Map();
+    let pendingResumeLog = null;
     let tpChartInstance = null;
     let statusChartInstance = null;
     let successSoundEnabled = localStorage.getItem("read_pod_sound_enabled") !== "false";
@@ -579,22 +581,40 @@
         const data = await response.json();
         const rows = Array.isArray(data) ? data : [];
         const uniqueNames = new Map();
+        const latestProgressByName = new Map();
 
-        rows.forEach(row => {
+        rows.forEach((row, rowIndex) => {
           const rawName = String(row.studentName || '').trim();
           if (!rawName || rawName === "Murid Tanpa Nama") return;
           const key = rawName.toLocaleLowerCase();
           if (!uniqueNames.has(key)) uniqueNames.set(key, rawName);
+
+          const parsedTime = Date.parse(row.timestamp);
+          const candidate = {
+            row,
+            rowIndex,
+            parsedTime: Number.isFinite(parsedTime) ? parsedTime : null
+          };
+          const previous = latestProgressByName.get(key);
+          const isNewer = !previous
+            || (candidate.parsedTime !== null && previous.parsedTime !== null
+              ? candidate.parsedTime >= previous.parsedTime
+              : candidate.rowIndex >= previous.rowIndex);
+
+          if (isNewer) latestProgressByName.set(key, candidate);
         });
 
         registeredStudentMap = new Map();
+        registeredStudentProgressMap = new Map();
         select.innerHTML = '<option value="">-- Pilih murid berdaftar --</option>';
 
         Array.from(uniqueNames.values())
           .sort((a, b) => a.localeCompare(b))
           .forEach((rawName, index) => {
             const optionKey = `pupil-${index}`;
+            const nameKey = rawName.toLocaleLowerCase();
             registeredStudentMap.set(optionKey, rawName);
+            registeredStudentProgressMap.set(optionKey, latestProgressByName.get(nameKey)?.row || null);
             const option = document.createElement('option');
             option.value = optionKey;
             option.textContent = rawName;
@@ -626,11 +646,73 @@
       const nameInput = document.getElementById('studentNameInput');
       if (nameInput) nameInput.value = selectedName;
 
+      const lastProgress = registeredStudentProgressMap.get(optionKey);
+      if (lastProgress) {
+        if (rawDataset && rawDataset.length > 0) {
+          resumeStudentLastPosition(lastProgress);
+        } else {
+          pendingResumeLog = lastProgress;
+        }
+      }
+
       const badge = document.getElementById('saveStatusBadge');
       if (badge) {
         badge.className = "text-[10px] whitespace-nowrap bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-lg border border-emerald-500/30 font-bold";
         badge.innerHTML = '<i class="fa-solid fa-check"></i> Dipilih';
         setTimeout(() => { badge.className = "hidden"; }, 2500);
+      }
+    }
+
+    function resumeStudentLastPosition(log) {
+      if (!log || !rawDataset || rawDataset.length === 0) {
+        pendingResumeLog = log || null;
+        return;
+      }
+
+      const normalize = value => String(value || '').trim().toLocaleLowerCase();
+      const logUnit = normalize(log.unitTopic);
+      const logTarget = normalize(log.targetWord);
+      const logLevel = normalize(log.tpLevel);
+
+      const matchingIndex = rawDataset.findIndex(item => {
+        const itemUnit = normalize(item.Unit_Topic || item.unit);
+        const itemTarget = normalize(item.Target_Word_Phrase || item.target);
+        const itemLevel = normalize(item.TP_Level || item.level);
+        return itemUnit === logUnit && itemTarget === logTarget && itemLevel === logLevel;
+      });
+
+      const feedback = document.getElementById('feedbackBox');
+      if (matchingIndex < 0) {
+        if (feedback) {
+          feedback.className = "min-h-[48px] bg-amber-950/80 border border-amber-500/50 rounded-2xl p-3 text-center text-xs font-semibold text-amber-200 flex items-center justify-center";
+          feedback.innerHTML = '<i class="fa-solid fa-circle-info"></i> Rekod terakhir ditemui, tetapi kad tersebut tidak lagi tersedia. Bermula pada kad pertama.';
+        }
+        return;
+      }
+
+      const levelFilter = document.getElementById('levelFilter');
+      if (levelFilter) levelFilter.value = "ALL";
+      currentList = [...rawDataset];
+      populateDropdown();
+      currentIndex = matchingIndex;
+      renderCard();
+
+      const completed = Math.max(0, Number(log.sentencesCompleted) || 0);
+      const recordedTotal = Math.max(0, Number(log.totalSentences) || 0);
+      const wasComplete = recordedTotal > 0
+        && completed >= recordedTotal
+        && Number(log.completionPercentage) >= 100;
+
+      activeSentenceIndex = wasComplete
+        ? currentSentences.length
+        : Math.min(completed, Math.max(0, currentSentences.length - 1));
+      renderSentenceView();
+
+      if (feedback) {
+        feedback.className = "min-h-[48px] bg-indigo-950/80 border border-indigo-500/50 rounded-2xl p-3 text-center text-xs font-semibold text-indigo-200 flex items-center justify-center gap-2";
+        feedback.innerHTML = wasComplete
+          ? '<i class="fa-solid fa-circle-check text-emerald-400"></i> Petikan terakhir telah selesai. Tekan <b>Finish Reading & Reset</b> atau pilih kad baharu.'
+          : `<i class="fa-solid fa-clock-rotate-left text-amber-400"></i> Sambung bacaan terakhir pada ayat ${activeSentenceIndex + 1} daripada ${currentSentences.length}.`;
       }
     }
 
@@ -854,6 +936,11 @@
       }
 
       filterData();
+      if (pendingResumeLog) {
+        const resumeLog = pendingResumeLog;
+        pendingResumeLog = null;
+        resumeStudentLastPosition(resumeLog);
+      }
     }
 
     function filterData() {
