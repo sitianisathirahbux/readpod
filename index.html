@@ -803,6 +803,38 @@
       }
     }
 
+    function playTryAgainSound() {
+      if (!successSoundEnabled) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const audioCtx = new AudioCtx();
+        const now = audioCtx.currentTime;
+        const notes = [
+          { frequency: 392.00, start: 0.00, duration: 0.14 },
+          { frequency: 293.66, start: 0.13, duration: 0.22 }
+        ];
+
+        notes.forEach(({ frequency, start, duration }) => {
+          const oscillator = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          oscillator.type = "triangle";
+          oscillator.frequency.setValueAtTime(frequency, now + start);
+          gain.gain.setValueAtTime(0.0001, now + start);
+          gain.gain.exponentialRampToValueAtTime(0.12, now + start + 0.025);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + start + duration);
+          oscillator.connect(gain);
+          gain.connect(audioCtx.destination);
+          oscillator.start(now + start);
+          oscillator.stop(now + start + duration);
+        });
+
+        setTimeout(() => audioCtx.close(), 650);
+      } catch (error) {
+        console.warn("Try-again sound could not be played:", error);
+      }
+    }
+
     function toggleSuccessSound() {
       successSoundEnabled = !successSoundEnabled;
       localStorage.setItem("read_pod_sound_enabled", String(successSoundEnabled));
@@ -1160,6 +1192,7 @@
             recordProgressToSheet("In Progress");
           }
         } else {
+          playTryAgainSound();
           feedback.className = "min-h-[48px] bg-rose-950/80 border border-rose-500/50 rounded-2xl p-3 text-center text-xs font-semibold text-rose-200 flex items-center justify-center gap-1";
           feedback.innerHTML = `🙂 You said: "<b>${spokenText}</b>". Try reading again!`;
         }
