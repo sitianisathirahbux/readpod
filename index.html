@@ -169,6 +169,24 @@
       <span id="badgeProgressText" class="text-xs font-black text-amber-300 whitespace-nowrap">0 / 10</span>
     </div>
 
+    <section id="studentLeaderboardPanel" class="bg-gradient-to-br from-amber-950/70 via-slate-900/80 to-indigo-950/70 border border-amber-400/40 rounded-2xl p-3 flex flex-col gap-3" aria-labelledby="studentLeaderboardTitle">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h2 id="studentLeaderboardTitle" class="text-xs font-extrabold text-amber-200">
+            <i class="fa-solid fa-trophy text-amber-400 mr-1"></i> Leaderboard READ-POD
+          </h2>
+          <p class="text-[10px] text-slate-400 mt-0.5">Ranking murid yang memperoleh lencana melalui penyelesaian aktiviti.</p>
+        </div>
+        <button type="button" onclick="refreshStudentLeaderboard()" aria-label="Muat semula leaderboard" title="Muat semula ranking" class="w-8 h-8 shrink-0 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-400/30 transition-all cursor-pointer">
+          <i id="leaderboardRefreshIcon" class="fa-solid fa-rotate"></i>
+        </button>
+      </div>
+      <div id="studentLeaderboardList" class="flex flex-col gap-2" aria-live="polite">
+        <p class="text-[11px] text-slate-400 text-center py-2"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Memuatkan ranking...</p>
+      </div>
+      <p class="text-[9px] text-slate-500"><i class="fa-solid fa-shield-halved mr-1"></i> Nama diringkaskan untuk melindungi privasi murid pada laman awam.</p>
+    </section>
+
     <div class="bg-amber-950/50 border border-amber-400/40 text-amber-100 text-[11px] leading-relaxed px-3 py-2 rounded-xl">
       <i class="fa-solid fa-circle-info mr-1"></i>
       Kemajuan menunjukkan penyelesaian aktiviti latihan, bukan Tahap Penguasaan PBD rasmi.
@@ -626,13 +644,142 @@
             }
           });
 
+        renderStudentLeaderboard(rows);
+
         if (uniqueNames.size === 0) {
           select.innerHTML = '<option value="">Belum ada murid berdaftar</option>';
         }
       } catch (error) {
         console.warn("Could not load registered pupil list:", error);
         select.innerHTML = '<option value="">Senarai murid tidak tersedia</option>';
+        renderStudentLeaderboard([], true);
       }
+    }
+
+    function leaderboardStudentLabel(value) {
+      const clean = String(value || "Murid").trim();
+      const parts = clean.split(/\s+/).filter(Boolean);
+      if (parts.length === 0) return "Murid";
+      if (parts.length === 1) {
+        return parts[0].length <= 3
+          ? parts[0].toUpperCase()
+          : parts[0].slice(0, 3) + "***";
+      }
+      const lastPart = parts[parts.length - 1];
+      return parts[0] + " " + lastPart.charAt(0).toUpperCase() + ".";
+    }
+
+    function renderStudentLeaderboard(rows, unavailable = false) {
+      const list = document.getElementById('studentLeaderboardList');
+      if (!list) return;
+
+      if (unavailable) {
+        list.innerHTML = '<p class="text-[11px] text-amber-300 text-center py-2">Ranking tidak dapat dimuatkan. Tekan butang muat semula.</p>';
+        return;
+      }
+
+      const pupils = new Map();
+      (Array.isArray(rows) ? rows : []).forEach((row, rowIndex) => {
+        const rawName = String(row.studentName || '').trim();
+        if (!rawName || rawName === "Murid Tanpa Nama") return;
+
+        const pupilKey = rawName.toLocaleLowerCase();
+        const activityKey = [
+          row.unitTopic || '',
+          row.targetWord || '',
+          row.tpLevel || ''
+        ].map(value => String(value).trim().toLocaleLowerCase()).join('|');
+        if (!activityKey.replace(/\|/g, '')) return;
+
+        const parsedTime = Date.parse(row.timestamp);
+        const sortKey = Number.isFinite(parsedTime) ? parsedTime : rowIndex;
+        if (!pupils.has(pupilKey)) {
+          pupils.set(pupilKey, { studentName: rawName, activities: new Map() });
+        }
+
+        const previous = pupils.get(pupilKey).activities.get(activityKey);
+        if (!previous || sortKey >= previous.sortKey) {
+          pupils.get(pupilKey).activities.set(activityKey, { row, sortKey });
+        }
+      });
+
+      const ranking = Array.from(pupils.values()).map(pupil => {
+        const completedCards = Array.from(pupil.activities.values()).filter(({ row }) => {
+          const total = Math.max(0, Number(row.totalSentences) || 0);
+          const completed = Math.max(0, Number(row.sentencesCompleted) || 0);
+          const percentage = Math.max(0, Number(row.completionPercentage) || 0);
+          const status = String(row.status || '').toLocaleLowerCase();
+          return percentage >= 100
+            || (total > 0 && completed >= total)
+            || status.includes('complete')
+            || status.includes('tamat');
+        }).length;
+
+        return {
+          studentName: pupil.studentName,
+          completedCards,
+          badges: Math.floor(completedCards / 10)
+        };
+      })
+        .filter(pupil => pupil.badges > 0)
+        .sort((a, b) => b.badges - a.badges
+          || b.completedCards - a.completedCards
+          || leaderboardStudentLabel(a.studentName).localeCompare(leaderboardStudentLabel(b.studentName)))
+        .slice(0, 10);
+
+      if (ranking.length === 0) {
+        list.innerHTML = '<p class="text-[11px] text-slate-400 text-center py-2">Belum ada murid mencapai 10 kad untuk memperoleh lencana.</p>';
+        return;
+      }
+
+      list.innerHTML = "";
+      ranking.forEach((pupil, index) => {
+        const row = document.createElement('div');
+        const isCurrentPupil = studentName
+          && pupil.studentName.toLocaleLowerCase() === studentName.toLocaleLowerCase();
+        row.className = `flex items-center justify-between gap-3 rounded-xl px-3 py-2 border ${
+          isCurrentPupil
+            ? 'bg-indigo-500/20 border-indigo-400/60'
+            : 'bg-slate-950/55 border-slate-700/70'
+        }`;
+
+        const left = document.createElement('div');
+        left.className = "flex items-center gap-2 min-w-0";
+
+        const rank = document.createElement('span');
+        rank.className = "w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-xs font-black " + (
+          index === 0 ? "bg-amber-400 text-slate-950"
+          : index === 1 ? "bg-slate-300 text-slate-900"
+          : index === 2 ? "bg-orange-700 text-orange-100"
+          : "bg-slate-800 text-slate-300"
+        );
+        rank.textContent = String(index + 1);
+
+        const identity = document.createElement('div');
+        identity.className = "min-w-0";
+        const name = document.createElement('p');
+        name.className = "text-[11px] font-extrabold text-slate-100 truncate";
+        name.textContent = leaderboardStudentLabel(pupil.studentName) + (isCurrentPupil ? " (Anda)" : "");
+        const detail = document.createElement('p');
+        detail.className = "text-[9px] text-slate-400";
+        detail.textContent = `${pupil.completedCards} aktiviti selesai`;
+        identity.append(name, detail);
+        left.append(rank, identity);
+
+        const badgeCount = document.createElement('span');
+        badgeCount.className = "shrink-0 text-[10px] font-black text-amber-300 bg-amber-500/10 border border-amber-400/30 px-2 py-1 rounded-lg";
+        badgeCount.textContent = `🏅 ${pupil.badges} lencana`;
+
+        row.append(left, badgeCount);
+        list.appendChild(row);
+      });
+    }
+
+    async function refreshStudentLeaderboard() {
+      const icon = document.getElementById('leaderboardRefreshIcon');
+      if (icon) icon.classList.add('fa-spin');
+      await populateRegisteredStudents();
+      if (icon) icon.classList.remove('fa-spin');
     }
 
     function selectRegisteredStudent(optionKey) {
