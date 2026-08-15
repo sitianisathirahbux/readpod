@@ -97,7 +97,7 @@
     }
   </style>
 </head>
-<!-- STREAMING_CHUNK:Rendering main app container and header with Dashboard Kemajuan button -->
+<!-- STREAMING_CHUNK:Rendering main app container and header with Progress Dashboard button -->
 <body class="p-3 sm:p-6 flex flex-col items-center justify-center min-h-screen">
 
   <!-- MAIN STUDENT INTERFACE CONTAINER -->
@@ -116,10 +116,10 @@
       </div>
       
       <div class="flex items-center gap-2">
-        <button id="themeToggleBtn" onclick="toggleTheme()" aria-label="Tukar tema" title="Light/Dark mode" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 transition-all cursor-pointer">
+        <button id="themeToggleBtn" onclick="toggleTheme()" aria-label="Switch theme" title="Light/Dark mode" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 transition-all cursor-pointer">
           <i id="themeToggleIcon" class="fa-solid fa-sun"></i>
         </button>
-        <button id="soundToggleBtn" onclick="toggleSuccessSound()" aria-label="Bunyi kejayaan" title="Bunyi kejayaan" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 transition-all cursor-pointer">
+        <button id="soundToggleBtn" onclick="toggleSuccessSound()" aria-label="Feedback sounds" title="Feedback sounds" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 transition-all cursor-pointer">
           <i id="soundToggleIcon" class="fa-solid fa-volume-high"></i>
         </button>
 
@@ -131,12 +131,12 @@
 
         <!-- Admin / Teacher Portal Button -->
         <button onclick="openAdminLoginModal()" class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-xs px-3 py-1.5 rounded-xl shadow-md flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer">
-          <i class="fa-solid fa-user-shield"></i> Dashboard Kemajuan
+          <i class="fa-solid fa-user-shield"></i> Progress Dashboard
         </button>
       </div>
     </div>
 
-    <nav class="grid grid-cols-2 gap-2 bg-slate-950/60 border border-slate-700/70 rounded-2xl p-1.5" role="tablist" aria-label="Paparan murid">
+    <nav class="grid grid-cols-2 gap-2 bg-slate-950/60 border border-slate-700/70 rounded-2xl p-1.5" role="tablist" aria-label="Student view">
       <button id="practiceTabButton" type="button" role="tab" aria-selected="true" aria-controls="studentPracticeTabPanel" onclick="switchStudentTab('practice')" class="bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-extrabold text-xs py-2.5 px-3 rounded-xl transition-all cursor-pointer">
         <i class="fa-solid fa-book-open-reader mr-1"></i> Latihan Membaca
       </button>
@@ -151,16 +151,16 @@
           <h2 id="studentLeaderboardTitle" class="text-xs font-extrabold text-amber-200">
             <i class="fa-solid fa-trophy text-amber-400 mr-1"></i> Leaderboard READ-POD
           </h2>
-          <p class="text-[10px] text-slate-400 mt-0.5">Ranking kemajuan bacaan rakan berdasarkan penyelesaian 10 kad.</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">Friends' reading progress ranked by completion of 10 cards.</p>
         </div>
-        <button type="button" onclick="refreshStudentLeaderboard()" aria-label="Muat semula leaderboard" title="Muat semula ranking" class="w-8 h-8 shrink-0 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-400/30 transition-all cursor-pointer">
+        <button type="button" onclick="refreshStudentLeaderboard()" aria-label="Refresh leaderboard" title="Refresh ranking" class="w-8 h-8 shrink-0 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-400/30 transition-all cursor-pointer">
           <i id="leaderboardRefreshIcon" class="fa-solid fa-rotate"></i>
         </button>
       </div>
       <div id="studentLeaderboardList" class="flex flex-col gap-2" aria-live="polite">
-        <p class="text-[11px] text-slate-400 text-center py-2"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Memuatkan ranking...</p>
+        <p class="text-[11px] text-slate-400 text-center py-2"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Loading ranking...</p>
       </div>
-      <p class="text-[9px] text-slate-500"><i class="fa-solid fa-shield-halved mr-1"></i> Nama diringkaskan untuk melindungi privasi murid pada laman awam.</p>
+      <p class="text-[9px] text-slate-500"><i class="fa-solid fa-shield-halved mr-1"></i> Names are shortened to protect pupil privacy on this public page.</p>
     </section>
 
     <div id="studentPracticeTabPanel" role="tabpanel" aria-hidden="false" class="flex flex-col gap-5">
@@ -169,10 +169,10 @@
     <div class="bg-indigo-950/80 border border-indigo-500/50 p-3 rounded-2xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shadow-inner">
       <div class="flex items-center gap-2">
         <i class="fa-solid fa-user-graduate text-amber-400 text-sm sm:text-base"></i>
-        <span class="text-xs font-bold text-indigo-200">Nama Penuh Murid:</span>
+        <span class="text-xs font-bold text-indigo-200">Pupil's Full Name:</span>
       </div>
       <div class="flex-grow flex items-center gap-2">
-        <input type="text" id="studentNameInput" placeholder="Masukkan nama penuh murid" onchange="saveStudentName(this.value)" class="w-full bg-slate-900/90 text-amber-300 font-semibold text-xs sm:text-sm px-3 py-2 rounded-xl border border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder-slate-500 transition-all">
+        <input type="text" id="studentNameInput" placeholder="Enter the pupil's full name" onchange="saveStudentName(this.value)" class="w-full bg-slate-900/90 text-amber-300 font-semibold text-xs sm:text-sm px-3 py-2 rounded-xl border border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder-slate-500 transition-all">
         <span id="saveStatusBadge" class="hidden text-[10px] whitespace-nowrap bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-lg border border-emerald-500/30 font-bold">
           <i class="fa-solid fa-cloud-arrow-up"></i> Saved
         </span>
@@ -182,18 +182,18 @@
     <div class="bg-slate-900/70 border border-indigo-400/30 p-3 rounded-2xl flex flex-col gap-2">
       <label for="registeredStudentSelect" class="text-xs font-bold text-indigo-200 flex items-center gap-2">
         <i class="fa-solid fa-address-card text-amber-400"></i>
-        Murid Berdaftar
+        Registered Pupils
       </label>
       <select id="registeredStudentSelect" onchange="selectRegisteredStudent(this.value)" class="w-full bg-slate-950 text-amber-300 font-semibold text-xs sm:text-sm px-3 py-2 rounded-xl border border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer">
-        <option value="">Memuatkan kod murid...</option>
+        <option value="">Loading pupil list...</option>
       </select>
-      <p class="text-[10px] text-slate-400">Pilih nama penuh murid. Murid baharu masih boleh menaip nama pada ruang di atas.</p>
+      <p class="text-[10px] text-slate-400">Select the pupil's full name. New pupils may still enter their name above.</p>
     </div>
 
     <div id="badgePanel" class="bg-gradient-to-r from-violet-950/80 to-indigo-950/80 border border-violet-400/40 p-3 rounded-2xl flex items-center justify-between gap-3">
       <div>
-        <p class="text-xs font-extrabold text-violet-200"><i class="fa-solid fa-medal text-amber-400 mr-1"></i> Lencana Latihan</p>
-        <p id="badgeStatusText" class="text-[10px] text-slate-400 mt-1">Pilih murid untuk merekod kemajuan lencana.</p>
+        <p class="text-xs font-extrabold text-violet-200"><i class="fa-solid fa-medal text-amber-400 mr-1"></i> Practice Badge</p>
+        <p id="badgeStatusText" class="text-[10px] text-slate-400 mt-1">Select a pupil to record badge progress.</p>
       </div>
       <span id="badgeProgressText" class="text-xs font-black text-amber-300 whitespace-nowrap">0 / 10</span>
     </div>
@@ -202,8 +202,8 @@
 
     <div class="bg-amber-950/50 border border-amber-400/40 text-amber-100 text-[11px] leading-relaxed px-3 py-2 rounded-xl">
       <i class="fa-solid fa-circle-info mr-1"></i>
-      Kemajuan menunjukkan penyelesaian aktiviti latihan, bukan Tahap Penguasaan PBD rasmi.
-      Penentuan TP murid memerlukan evidens dan pengesahan guru.
+      Progress shows completion of practice activities, not an official PBD Mastery Level.
+      A pupil's TP requires evidence and teacher validation.
     </div>
 
     <!-- Meta Filters & Direct Dropdown Selection -->
@@ -212,9 +212,9 @@
       <div class="flex items-center gap-2 bg-slate-900/60 border border-slate-700/60 px-3 py-2 rounded-xl">
         <i class="fa-solid fa-filter text-amber-400 text-xs"></i>
         <select id="levelFilter" onchange="filterData()" class="bg-transparent text-xs font-semibold text-slate-200 focus:outline-none w-full cursor-pointer">
-          <option value="ALL" class="bg-slate-900 text-white">Semua Aras Bahan</option>
-          <option value="TP2" class="bg-slate-900 text-amber-400">Bahan Aras TP2 (Fokus Fonik)</option>
-          <option value="TP3" class="bg-slate-900 text-emerald-400">Bahan Aras TP3 (Fokus Frasa)</option>
+          <option value="ALL" class="bg-slate-900 text-white">All Material Levels</option>
+          <option value="TP2" class="bg-slate-900 text-amber-400">TP2-Level Material (Phonics Focus)</option>
+          <option value="TP3" class="bg-slate-900 text-emerald-400">TP3-Level Material (Phrase Focus)</option>
         </select>
       </div>
 
@@ -329,35 +329,35 @@
         </div>
         <div>
           <h2 class="text-lg font-bold text-white">Admin / Teacher Access</h2>
-          <p class="text-xs text-slate-400">Portal Kemajuan Latihan Membaca (Akses Guru)</p>
+          <p class="text-xs text-slate-400">Reading Practice Progress Portal (Teacher Access)</p>
         </div>
       </div>
 
       <div class="flex flex-col gap-2">
-        <label class="text-xs font-bold text-slate-300">Akses dashboard guru:</label>
+        <label class="text-xs font-bold text-slate-300">Teacher dashboard access:</label>
         <div class="relative">
-          <input type="password" id="adminPinInput" placeholder="Masukkan kata laluan admin" onkeyup="if(event.key==='Enter') verifyAdminPin()" class="w-full bg-slate-950 text-amber-300 text-sm px-4 py-3 rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400 tracking-wider">
+          <input type="password" id="adminPinInput" placeholder="Enter the admin password" onkeyup="if(event.key==='Enter') verifyAdminPin()" class="w-full bg-slate-950 text-amber-300 text-sm px-4 py-3 rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400 tracking-wider">
           <button onclick="togglePinVisibility()" class="absolute right-3 top-3 text-slate-400 hover:text-slate-200 text-sm cursor-pointer">
             <i class="fa-solid fa-eye" id="pinEyeIcon"></i>
           </button>
         </div>
         <p id="pinErrorText" class="hidden text-xs text-rose-400 font-semibold mt-1">
-          <i class="fa-solid fa-circle-exclamation"></i> Kata laluan tidak sah. Cuba semula.
+          <i class="fa-solid fa-circle-exclamation"></i> Invalid password. Please try again.
         </p>
       </div>
 
       <div class="flex justify-end gap-2 mt-2">
         <button onclick="closeAdminLoginModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl border border-slate-700 cursor-pointer">
-          Batal
+          Cancel
         </button>
         <button onclick="verifyAdminPin()" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold rounded-xl shadow-lg transition-all cursor-pointer">
-          Masuk Dashboard <i class="fa-solid fa-arrow-right-to-bracket ml-1"></i>
+          Open Dashboard <i class="fa-solid fa-arrow-right-to-bracket ml-1"></i>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- STREAMING_CHUNK:Building Dashboard Kemajuan Modal Interface, Charts, and Student Table -->
+  <!-- STREAMING_CHUNK:Building Progress Dashboard Modal Interface, Charts, and Student Table -->
   <!-- FULLSCREEN ADMIN ANALYTICS DASHBOARD MODAL -->
   <div id="adminDashboardModal" class="fixed inset-0 bg-slate-950/95 z-50 hidden overflow-y-auto p-3 sm:p-6">
     <div class="max-w-6xl mx-auto flex flex-col gap-6">
@@ -369,7 +369,7 @@
             <i class="fa-solid fa-chart-pie"></i>
           </div>
           <div>
-            <h1 class="text-xl font-extrabold text-white">Dashboard Analisis & Prestasi READ-POD</h1>
+            <h1 class="text-xl font-extrabold text-white">READ-POD Analytics & Performance Dashboard</h1>
             <p class="text-xs text-slate-400"> SITI ANIS ATHIRAH BUX • Real-Time Live Sync Analytics</p>
           </div>
         </div>
@@ -382,7 +382,7 @@
             <i class="fa-solid fa-file-csv"></i> Export CSV
           </button>
           <button onclick="closeAdminDashboard()" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow border border-rose-400/30 transition-all cursor-pointer">
-            <i class="fa-solid fa-xmark"></i> Keluar
+            <i class="fa-solid fa-xmark"></i> Exit
           </button>
         </div>
       </div>
@@ -391,7 +391,7 @@
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <!-- Total Active Readers -->
         <div class="glass-card rounded-2xl p-4 border-l-4 border-l-amber-400 flex flex-col justify-between">
-          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Jumlah Murid Terlibat</span>
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Participating Pupils</span>
           <div class="flex items-baseline justify-between mt-2">
             <span id="kpiTotalStudents" class="text-3xl font-black text-amber-300">0</span>
             <i class="fa-solid fa-users text-amber-400/40 text-2xl"></i>
@@ -401,7 +401,7 @@
 
         <!-- Total Sessions Completed -->
         <div class="glass-card rounded-2xl p-4 border-l-4 border-l-emerald-400 flex flex-col justify-between">
-          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tamat Semua Ayat</span>
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">All Sentences Completed</span>
           <div class="flex items-baseline justify-between mt-2">
             <span id="kpiCompleted" class="text-3xl font-black text-emerald-400">0</span>
             <i class="fa-solid fa-circle-check text-emerald-400/40 text-2xl"></i>
@@ -411,7 +411,7 @@
 
         <!-- Average Mastery Percentage -->
         <div class="glass-card rounded-2xl p-4 border-l-4 border-l-indigo-400 flex flex-col justify-between">
-          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Purata Kemajuan Latihan</span>
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Average Practice Progress</span>
           <div class="flex items-baseline justify-between mt-2">
             <span id="kpiAvgScore" class="text-3xl font-black text-indigo-300">0%</span>
             <i class="fa-solid fa-bullseye text-indigo-400/40 text-2xl"></i>
@@ -421,7 +421,7 @@
 
         <!-- Needs Intervention Count -->
         <div class="glass-card rounded-2xl p-4 border-l-4 border-l-rose-400 flex flex-col justify-between">
-          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Sesi Dalam Proses</span>
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Sessions in Progress</span>
           <div class="flex items-baseline justify-between mt-2">
             <span id="kpiInProgress" class="text-3xl font-black text-rose-400">0</span>
             <i class="fa-solid fa-spinner text-rose-400/40 text-2xl"></i>
@@ -436,7 +436,7 @@
         <!-- TP Level Distribution Chart -->
         <div class="glass-card rounded-2xl p-5 border border-slate-700 flex flex-col gap-3">
           <h3 class="text-sm font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-chart-pie text-amber-400"></i> Taburan Rekod Mengikut Aras Bahan
+            <i class="fa-solid fa-chart-pie text-amber-400"></i> Records by Material Level
           </h3>
           <div class="relative h-64 w-full flex items-center justify-center">
             <canvas id="tpChart"></canvas>
@@ -446,7 +446,7 @@
         <!-- Status Completion Breakdown Chart -->
         <div class="glass-card rounded-2xl p-5 border border-slate-700 flex flex-col gap-3">
           <h3 class="text-sm font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-chart-column text-emerald-400"></i> Status Penyelesaian Rekod Latihan
+            <i class="fa-solid fa-chart-column text-emerald-400"></i> Practice Record Completion Status
           </h3>
           <div class="relative h-64 w-full flex items-center justify-center">
             <canvas id="statusChart"></canvas>
@@ -460,15 +460,15 @@
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div>
             <h3 class="text-base font-bold text-white flex items-center gap-2">
-              <i class="fa-solid fa-table-list text-amber-400"></i> Rekod Aktiviti Latihan Membaca
+              <i class="fa-solid fa-table-list text-amber-400"></i> Reading Practice Activity Records
             </h3>
-            <p class="text-xs text-slate-400">Satu baris bagi setiap murid • Rekod terkini setiap aktiviti digunakan</p>
+            <p class="text-xs text-slate-400">One row per pupil • The latest record for each activity is used</p>
           </div>
           
           <!-- Table Search Filter -->
           <div class="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-700">
             <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs"></i>
-            <input type="text" id="adminTableSearch" oninput="filterAdminTable()" placeholder="Cari nama murid..." class="bg-transparent text-xs text-amber-300 focus:outline-none w-36 sm:w-48">
+            <input type="text" id="adminTableSearch" oninput="filterAdminTable()" placeholder="Search pupil name..." class="bg-transparent text-xs text-amber-300 focus:outline-none w-36 sm:w-48">
           </div>
         </div>
 
@@ -477,19 +477,19 @@
           <table class="w-full text-left border-collapse text-xs">
             <thead>
               <tr class="bg-indigo-950/80 text-indigo-200 border-b border-indigo-800 font-bold">
-                <th class="p-3">Masa / Tarikh</th>
-                <th class="p-3">Nama Murid</th>
-                <th class="p-3">Unit / Topik</th>
-                <th class="p-3">Aktiviti / Sasaran</th>
-                <th class="p-3">Aras Bahan Latihan</th>
-                <th class="p-3">Ayat Selesai</th>
-                <th class="p-3">Kemajuan Latihan (%)</th>
+                <th class="p-3">Time / Date</th>
+                <th class="p-3">Pupil Name</th>
+                <th class="p-3">Unit / Topic</th>
+                <th class="p-3">Activity / Target</th>
+                <th class="p-3">Practice Material Level</th>
+                <th class="p-3">Sentences Completed</th>
+                <th class="p-3">Practice Progress (%)</th>
                 <th class="p-3">Status</th>
               </tr>
             </thead>
             <tbody id="adminTableBody" class="divide-y divide-slate-800/80 text-slate-300">
               <tr>
-                <td colspan="8" class="p-4 text-center text-slate-500 italic">Memuat naik log rekod murid dari Google Sheet...</td>
+                <td colspan="8" class="p-4 text-center text-slate-500 italic">Loading pupil records from Google Sheets...</td>
               </tr>
             </tbody>
           </table>
@@ -596,8 +596,8 @@
     }
 
     function stablePupilCode(value) {
-      const clean = String(value || "Murid").trim();
-      const base = privacySafeStudentLabel(clean).replace(/[^A-Z0-9*]/gi, '').slice(0, 5) || "MURID";
+      const clean = String(value || "Pupil").trim();
+      const base = privacySafeStudentLabel(clean).replace(/[^A-Z0-9*]/gi, '').slice(0, 5) || "PUPIL";
       let hash = 0;
       for (const char of clean.toLocaleLowerCase()) {
         hash = ((hash << 5) - hash + char.charCodeAt(0)) >>> 0;
@@ -618,7 +618,7 @@
 
         rows.forEach((row, rowIndex) => {
           const rawName = String(row.studentName || '').trim();
-          if (!rawName || rawName === "Murid Tanpa Nama") return;
+          if (!rawName || ["Murid Tanpa Nama", "Unnamed Pupil"].includes(rawName)) return;
           const key = rawName.toLocaleLowerCase();
           if (!uniqueNames.has(key)) uniqueNames.set(key, rawName);
 
@@ -639,7 +639,7 @@
 
         registeredStudentMap = new Map();
         registeredStudentProgressMap = new Map();
-        select.innerHTML = '<option value="">-- Pilih murid berdaftar --</option>';
+        select.innerHTML = '<option value="">-- Select a registered pupil --</option>';
 
         Array.from(uniqueNames.values())
           .sort((a, b) => a.localeCompare(b))
@@ -662,11 +662,11 @@
         renderStudentLeaderboard(rows);
 
         if (uniqueNames.size === 0) {
-          select.innerHTML = '<option value="">Belum ada murid berdaftar</option>';
+          select.innerHTML = '<option value="">No registered pupils yet</option>';
         }
       } catch (error) {
         console.warn("Could not load registered pupil list:", error);
-        select.innerHTML = '<option value="">Senarai murid tidak tersedia</option>';
+        select.innerHTML = '<option value="">Pupil list unavailable</option>';
         renderStudentLeaderboard([], true);
       }
     }
@@ -704,7 +704,7 @@
     }
 
     function leaderboardStudentLabel(value) {
-      const clean = String(value || "Murid").trim();
+      const clean = String(value || "Pupil").trim();
       const parts = clean.split(/\s+/).filter(Boolean);
       if (parts.length === 0) return "Murid";
       if (parts.length === 1) {
@@ -721,14 +721,14 @@
       if (!list) return;
 
       if (unavailable) {
-        list.innerHTML = '<p class="text-[11px] text-amber-300 text-center py-2">Ranking tidak dapat dimuatkan. Tekan butang muat semula.</p>';
+        list.innerHTML = '<p class="text-[11px] text-amber-300 text-center py-2">The ranking could not be loaded. Press the refresh button.</p>';
         return;
       }
 
       const pupils = new Map();
       (Array.isArray(rows) ? rows : []).forEach((row, rowIndex) => {
         const rawName = String(row.studentName || '').trim();
-        if (!rawName || rawName === "Murid Tanpa Nama") return;
+        if (!rawName || ["Murid Tanpa Nama", "Unnamed Pupil"].includes(rawName)) return;
 
         const pupilKey = rawName.toLocaleLowerCase();
         const activityKey = [
@@ -776,7 +776,7 @@
         .slice(0, 10);
 
       if (ranking.length === 0) {
-        list.innerHTML = '<p class="text-[11px] text-slate-400 text-center py-2">Belum ada rekod murid yang menyelesaikan kad bacaan.</p>';
+        list.innerHTML = '<p class="text-[11px] text-slate-400 text-center py-2">No pupils have completed a reading card yet.</p>';
         return;
       }
 
@@ -807,20 +807,20 @@
         identity.className = "min-w-0";
         const name = document.createElement('p');
         name.className = "text-[11px] font-extrabold text-slate-100 truncate";
-        name.textContent = leaderboardStudentLabel(pupil.studentName) + (isCurrentPupil ? " (Anda)" : "");
+        name.textContent = leaderboardStudentLabel(pupil.studentName) + (isCurrentPupil ? " (You)" : "");
         const detail = document.createElement('p');
         detail.className = "text-[9px] text-slate-400";
         detail.textContent = pupil.badgeEarned
           ? 'READ-POD Champion'
-          : `${10 - pupil.progressCards} kad lagi untuk lencana`;
+          : `${10 - pupil.progressCards} more cards to earn the badge`;
         identity.append(name, detail);
         left.append(rank, identity);
 
         const badgeCount = document.createElement('span');
         badgeCount.className = "shrink-0 text-[10px] font-black text-amber-300 bg-amber-500/10 border border-amber-400/30 px-2 py-1 rounded-lg";
         badgeCount.textContent = pupil.badgeEarned
-          ? `🏅 ${pupil.progressCards} / 10 kad`
-          : `${pupil.progressCards} / 10 kad`;
+          ? `🏅 ${pupil.progressCards} / 10 cards`
+          : `${pupil.progressCards} / 10 cards`;
 
         row.append(left, badgeCount);
         list.appendChild(row);
@@ -857,7 +857,7 @@
       const badge = document.getElementById('saveStatusBadge');
       if (badge) {
         badge.className = "text-[10px] whitespace-nowrap bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-lg border border-emerald-500/30 font-bold";
-        badge.innerHTML = '<i class="fa-solid fa-check"></i> Dipilih';
+        badge.innerHTML = '<i class="fa-solid fa-check"></i> Selected';
         setTimeout(() => { badge.className = "hidden"; }, 2500);
       }
     }
@@ -884,7 +884,7 @@
       if (matchingIndex < 0) {
         if (feedback) {
           feedback.className = "min-h-[48px] bg-amber-950/80 border border-amber-500/50 rounded-2xl p-3 text-center text-xs font-semibold text-amber-200 flex items-center justify-center";
-          feedback.innerHTML = '<i class="fa-solid fa-circle-info"></i> Rekod terakhir ditemui, tetapi kad tersebut tidak lagi tersedia. Bermula pada kad pertama.';
+          feedback.innerHTML = '<i class="fa-solid fa-circle-info"></i> The latest record was found, but that card is no longer available. Starting from the first card.';
         }
         return;
       }
@@ -910,8 +910,8 @@
       if (feedback) {
         feedback.className = "min-h-[48px] bg-indigo-950/80 border border-indigo-500/50 rounded-2xl p-3 text-center text-xs font-semibold text-indigo-200 flex items-center justify-center gap-2";
         feedback.innerHTML = wasComplete
-          ? '<i class="fa-solid fa-circle-check text-emerald-400"></i> Petikan terakhir telah selesai. Tekan <b>Finish Reading & Reset</b> atau pilih kad baharu.'
-          : `<i class="fa-solid fa-clock-rotate-left text-amber-400"></i> Sambung bacaan terakhir pada ayat ${activeSentenceIndex + 1} daripada ${currentSentences.length}.`;
+          ? '<i class="fa-solid fa-circle-check text-emerald-400"></i> The latest passage is complete. Press <b>Finish Reading & Reset</b> or select a new card.'
+          : `<i class="fa-solid fa-clock-rotate-left text-amber-400"></i> Resume the latest reading at sentence ${activeSentenceIndex + 1} of ${currentSentences.length}.`;
       }
     }
 
@@ -947,7 +947,7 @@
       if (!status || !progress) return;
 
       if (!studentName) {
-        status.innerHTML = "Pilih murid untuk merekod kemajuan lencana.";
+        status.innerHTML = "Select a pupil to record badge progress.";
         progress.textContent = "0 / 10";
         return;
       }
@@ -955,8 +955,8 @@
       const count = getCompletedCardIds().length;
       progress.textContent = `${Math.min(count, 10)} / 10`;
       status.innerHTML = count >= 10
-        ? '<span class="text-amber-300 font-extrabold">🏅 READ-POD Champion</span> — ganjaran penyelesaian 10 kad latihan.'
-        : `${10 - count} kad lagi untuk memperoleh <b>READ-POD Champion</b>.`;
+        ? '<span class="text-amber-300 font-extrabold">🏅 READ-POD Champion</span> — reward for completing 10 practice cards.'
+        : `${10 - count} more cards to earn <b>READ-POD Champion</b>.`;
     }
 
     function awardCurrentCardCompletion() {
@@ -1046,7 +1046,7 @@
       const button = document.getElementById('soundToggleBtn');
       if (!icon || !button) return;
       icon.className = successSoundEnabled ? "fa-solid fa-volume-high" : "fa-solid fa-volume-xmark";
-      button.title = successSoundEnabled ? "Matikan bunyi kejayaan" : "Hidupkan bunyi kejayaan";
+      button.title = successSoundEnabled ? "Turn off feedback sounds" : "Turn on feedback sounds";
     }
 
     function applyTheme(theme) {
@@ -1090,7 +1090,7 @@
       const feedback = document.getElementById('feedbackBox');
       if (feedback) {
         feedback.className = "min-h-[48px] bg-indigo-950/80 border border-indigo-500/50 rounded-2xl p-3 text-center text-xs font-semibold text-indigo-200 flex items-center justify-center";
-        feedback.innerHTML = '<i class="fa-solid fa-rotate-right text-amber-400"></i> Reader reset. Pilih murid untuk sesi seterusnya.';
+        feedback.innerHTML = '<i class="fa-solid fa-rotate-right text-amber-400"></i> Reader reset. Select a pupil for the next session.';
       }
     }
 
@@ -1106,7 +1106,7 @@
       const percent = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0;
 
       const payload = {
-        studentName: studentName || "Murid Tanpa Nama",
+        studentName: studentName || "Unnamed Pupil",
         unitTopic: unit,
         targetWord: target,
         tpLevel: tp,
@@ -1542,7 +1542,7 @@
     }
 
     function privacySafeStudentLabel(value) {
-      const clean = String(value || "Murid").trim();
+      const clean = String(value || "Pupil").trim();
       if (!clean) return "Murid";
       if (/^[A-Za-z]{1,3}\d{1,4}[A-Za-z]?$/i.test(clean)) return clean.toUpperCase();
       const parts = clean.split(/\s+/).filter(Boolean);
@@ -1556,7 +1556,7 @@
       tbody.innerHTML = "";
 
       if (!logs || logs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-400 italic">Belum ada rekod murid di dalam Google Sheet. Minta murid membaca pada aplikasi ini dahulu!</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-400 italic">There are no pupil records in Google Sheets yet. Ask pupils to practise reading in this app first!</td></tr>`;
         return;
       }
 
@@ -1569,7 +1569,7 @@
       const pupils = new Map();
 
       logs.forEach((log, index) => {
-        const rawName = String(log.studentName || "Murid Tanpa Nama").trim();
+        const rawName = String(log.studentName || "Unnamed Pupil").trim();
         const pupilKey = rawName.toLocaleLowerCase();
         const activityKey = [
           log.unitTopic || '',
@@ -1637,8 +1637,8 @@
         tr.className = "hover:bg-slate-800/50 transition-all";
 
         const statusBadge = row.isComplete
-          ? `<span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-bold text-[10px]">✓ Tamat</span>`
-          : `<span class="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold text-[10px]">⏳ Dalam Latihan</span>`;
+          ? `<span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-bold text-[10px]">✓ Completed</span>`
+          : `<span class="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold text-[10px]">⏳ In Practice</span>`;
 
         const unitSummary = row.units.length > 2
           ? `${row.units.slice(0, 2).join(', ')} +${row.units.length - 2}`
@@ -1653,7 +1653,7 @@
           <td class="p-3 text-slate-200">${safeText(unitSummary)}</td>
           <td class="p-3 font-semibold text-indigo-300">
             ${safeText(targetSummary)}
-            <span class="block text-[9px] text-slate-500 mt-1">${row.activityCount} aktiviti unik</span>
+            <span class="block text-[9px] text-slate-500 mt-1">${row.activityCount} unique activities</span>
           </td>
           <td class="p-3 font-bold text-amber-400">${safeText(row.levels.join(', ') || '-')}</td>
           <td class="p-3 text-slate-300">${row.sentencesCompleted} / ${row.totalSentences}</td>
@@ -1687,7 +1687,7 @@
         tpChartInstance = new Chart(ctx1, {
           type: 'doughnut',
           data: {
-            labels: ['Bahan Aras TP2 (Fokus Fonik)', 'Bahan Aras TP3 (Fokus Frasa)'],
+            labels: ['TP2-Level Material (Phonics Focus)', 'TP3-Level Material (Phrase Focus)'],
             datasets: [{
               data: [tp2Count, tp3Count],
               backgroundColor: ['#f5c542', '#34d399'],
@@ -1718,9 +1718,9 @@
         statusChartInstance = new Chart(ctx2, {
           type: 'bar',
           data: {
-            labels: ['Semua Ayat Selesai (100%)', 'Latihan Belum Selesai'],
+            labels: ['Semua Sentences Completed (100%)', 'Practice Incomplete'],
             datasets: [{
-              label: 'Bilangan Rekod Aktiviti',
+              label: 'Number of Activity Records',
               data: [completedCount, inProgressCount],
               backgroundColor: ['#10b981', '#f59e0b'],
               borderRadius: 8
@@ -1743,12 +1743,12 @@
 
     function exportProgressCSV() {
       if (!analyticsLogs || analyticsLogs.length === 0) {
-        alert("Tiada rekod data murid untuk dieksport.");
+        alert("No pupil records are available to export.");
         return;
       }
 
       let csvContent = "data:text/csv;charset=utf-8,";
-      csvContent += "Masa / Tarikh,Nama Murid,Unit / Topik,Perkataan Sasaran,Aras Bahan Latihan,Ayat Selesai,Jumlah Ayat,Peratus Kemajuan Latihan,Status\n";
+      csvContent += "Time / Date,Pupil Name,Unit / Topic,Perkataan Sasaran,Practice Material Level,Sentences Completed,Jumlah Ayat,Peratus Kemajuan Latihan,Status\n";
 
       analyticsLogs.forEach(row => {
         csvContent += `"${row.timestamp || ''}","${row.studentName || ''}","${row.unitTopic || ''}","${row.targetWord || ''}","${row.tpLevel || ''}",${row.sentencesCompleted || 0},${row.totalSentences || 0},${row.completionPercentage || 0}%,"${row.status || ''}"\n`;
