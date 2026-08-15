@@ -138,7 +138,7 @@
 
     <nav class="grid grid-cols-2 gap-2 bg-slate-950/60 border border-slate-700/70 rounded-2xl p-1.5" role="tablist" aria-label="Student view">
       <button id="practiceTabButton" type="button" role="tab" aria-selected="true" aria-controls="studentPracticeTabPanel" onclick="switchStudentTab('practice')" class="bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-extrabold text-xs py-2.5 px-3 rounded-xl transition-all cursor-pointer">
-        <i class="fa-solid fa-book-open-reader mr-1"></i> Latihan Membaca
+        <i class="fa-solid fa-book-open-reader mr-1"></i> Reading Practice
       </button>
       <button id="leaderboardTabButton" type="button" role="tab" aria-selected="false" aria-controls="studentLeaderboardPanel" onclick="switchStudentTab('leaderboard')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-extrabold text-xs py-2.5 px-3 rounded-xl border border-slate-700 transition-all cursor-pointer">
         <i class="fa-solid fa-trophy text-amber-400 mr-1"></i> Leaderboard
@@ -706,7 +706,7 @@
     function leaderboardStudentLabel(value) {
       const clean = String(value || "Pupil").trim();
       const parts = clean.split(/\s+/).filter(Boolean);
-      if (parts.length === 0) return "Murid";
+      if (parts.length === 0) return "Pupil";
       if (parts.length === 1) {
         return parts[0].length <= 3
           ? parts[0].toUpperCase()
@@ -1543,7 +1543,7 @@
 
     function privacySafeStudentLabel(value) {
       const clean = String(value || "Pupil").trim();
-      if (!clean) return "Murid";
+      if (!clean) return "Pupil";
       if (/^[A-Za-z]{1,3}\d{1,4}[A-Za-z]?$/i.test(clean)) return clean.toUpperCase();
       const parts = clean.split(/\s+/).filter(Boolean);
       if (parts.length > 1) return parts.map(part => part.charAt(0).toUpperCase()).join("").slice(0, 4);
@@ -1748,7 +1748,7 @@
       }
 
       let csvContent = "data:text/csv;charset=utf-8,";
-      csvContent += "Time / Date,Pupil Name,Unit / Topic,Perkataan Sasaran,Practice Material Level,Sentences Completed,Jumlah Ayat,Peratus Kemajuan Latihan,Status\n";
+      csvContent += "Time / Date,Pupil Name,Unit / Topic,Target Word,Practice Material Level,Sentences Completed,Total Sentences,Practice Progress Percentage,Status\n";
 
       analyticsLogs.forEach(row => {
         csvContent += `"${row.timestamp || ''}","${row.studentName || ''}","${row.unitTopic || ''}","${row.targetWord || ''}","${row.tpLevel || ''}",${row.sentencesCompleted || 0},${row.totalSentences || 0},${row.completionPercentage || 0}%,"${row.status || ''}"\n`;
