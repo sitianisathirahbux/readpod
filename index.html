@@ -151,7 +151,7 @@
           <h2 id="studentLeaderboardTitle" class="text-xs font-extrabold text-amber-200">
             <i class="fa-solid fa-trophy text-amber-400 mr-1"></i> Leaderboard READ-POD
           </h2>
-          <p class="text-[10px] text-slate-400 mt-0.5">Ranking murid yang memperoleh lencana melalui penyelesaian aktiviti.</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">Ranking kemajuan bacaan rakan berdasarkan penyelesaian 10 kad.</p>
         </div>
         <button type="button" onclick="refreshStudentLeaderboard()" aria-label="Muat semula leaderboard" title="Muat semula ranking" class="w-8 h-8 shrink-0 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-400/30 transition-all cursor-pointer">
           <i id="leaderboardRefreshIcon" class="fa-solid fa-rotate"></i>
@@ -765,17 +765,18 @@
         return {
           studentName: pupil.studentName,
           completedCards,
-          badges: Math.floor(completedCards / 10)
+          progressCards: Math.min(completedCards, 10),
+          badgeEarned: completedCards >= 10
         };
       })
-        .filter(pupil => pupil.badges > 0)
-        .sort((a, b) => b.badges - a.badges
+        .filter(pupil => pupil.completedCards > 0)
+        .sort((a, b) => b.progressCards - a.progressCards
           || b.completedCards - a.completedCards
           || leaderboardStudentLabel(a.studentName).localeCompare(leaderboardStudentLabel(b.studentName)))
         .slice(0, 10);
 
       if (ranking.length === 0) {
-        list.innerHTML = '<p class="text-[11px] text-slate-400 text-center py-2">Belum ada murid mencapai 10 kad untuk memperoleh lencana.</p>';
+        list.innerHTML = '<p class="text-[11px] text-slate-400 text-center py-2">Belum ada rekod murid yang menyelesaikan kad bacaan.</p>';
         return;
       }
 
@@ -809,13 +810,17 @@
         name.textContent = leaderboardStudentLabel(pupil.studentName) + (isCurrentPupil ? " (Anda)" : "");
         const detail = document.createElement('p');
         detail.className = "text-[9px] text-slate-400";
-        detail.textContent = `${pupil.completedCards} aktiviti selesai`;
+        detail.textContent = pupil.badgeEarned
+          ? 'READ-POD Champion'
+          : `${10 - pupil.progressCards} kad lagi untuk lencana`;
         identity.append(name, detail);
         left.append(rank, identity);
 
         const badgeCount = document.createElement('span');
         badgeCount.className = "shrink-0 text-[10px] font-black text-amber-300 bg-amber-500/10 border border-amber-400/30 px-2 py-1 rounded-lg";
-        badgeCount.textContent = `🏅 ${pupil.badges} lencana`;
+        badgeCount.textContent = pupil.badgeEarned
+          ? `🏅 ${pupil.progressCards} / 10 kad`
+          : `${pupil.progressCards} / 10 kad`;
 
         row.append(left, badgeCount);
         list.appendChild(row);
