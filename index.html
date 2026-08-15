@@ -136,6 +136,35 @@
       </div>
     </div>
 
+    <nav class="grid grid-cols-2 gap-2 bg-slate-950/60 border border-slate-700/70 rounded-2xl p-1.5" role="tablist" aria-label="Paparan murid">
+      <button id="practiceTabButton" type="button" role="tab" aria-selected="true" aria-controls="studentPracticeTabPanel" onclick="switchStudentTab('practice')" class="bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-extrabold text-xs py-2.5 px-3 rounded-xl transition-all cursor-pointer">
+        <i class="fa-solid fa-book-open-reader mr-1"></i> Latihan Membaca
+      </button>
+      <button id="leaderboardTabButton" type="button" role="tab" aria-selected="false" aria-controls="studentLeaderboardPanel" onclick="switchStudentTab('leaderboard')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-extrabold text-xs py-2.5 px-3 rounded-xl border border-slate-700 transition-all cursor-pointer">
+        <i class="fa-solid fa-trophy text-amber-400 mr-1"></i> Leaderboard
+      </button>
+    </nav>
+
+    <section id="studentLeaderboardPanel" style="display: none;" role="tabpanel" aria-hidden="true" class="bg-gradient-to-br from-amber-950/70 via-slate-900/80 to-indigo-950/70 border border-amber-400/40 rounded-2xl p-3 flex flex-col gap-3" aria-labelledby="studentLeaderboardTitle">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h2 id="studentLeaderboardTitle" class="text-xs font-extrabold text-amber-200">
+            <i class="fa-solid fa-trophy text-amber-400 mr-1"></i> Leaderboard READ-POD
+          </h2>
+          <p class="text-[10px] text-slate-400 mt-0.5">Ranking murid yang memperoleh lencana melalui penyelesaian aktiviti.</p>
+        </div>
+        <button type="button" onclick="refreshStudentLeaderboard()" aria-label="Muat semula leaderboard" title="Muat semula ranking" class="w-8 h-8 shrink-0 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-400/30 transition-all cursor-pointer">
+          <i id="leaderboardRefreshIcon" class="fa-solid fa-rotate"></i>
+        </button>
+      </div>
+      <div id="studentLeaderboardList" class="flex flex-col gap-2" aria-live="polite">
+        <p class="text-[11px] text-slate-400 text-center py-2"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Memuatkan ranking...</p>
+      </div>
+      <p class="text-[9px] text-slate-500"><i class="fa-solid fa-shield-halved mr-1"></i> Nama diringkaskan untuk melindungi privasi murid pada laman awam.</p>
+    </section>
+
+    <div id="studentPracticeTabPanel" role="tabpanel" aria-hidden="false" class="flex flex-col gap-5">
+
     <!-- Student Profile & Name Entry Bar -->
     <div class="bg-indigo-950/80 border border-indigo-500/50 p-3 rounded-2xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shadow-inner">
       <div class="flex items-center gap-2">
@@ -169,23 +198,7 @@
       <span id="badgeProgressText" class="text-xs font-black text-amber-300 whitespace-nowrap">0 / 10</span>
     </div>
 
-    <section id="studentLeaderboardPanel" class="bg-gradient-to-br from-amber-950/70 via-slate-900/80 to-indigo-950/70 border border-amber-400/40 rounded-2xl p-3 flex flex-col gap-3" aria-labelledby="studentLeaderboardTitle">
-      <div class="flex items-center justify-between gap-3">
-        <div>
-          <h2 id="studentLeaderboardTitle" class="text-xs font-extrabold text-amber-200">
-            <i class="fa-solid fa-trophy text-amber-400 mr-1"></i> Leaderboard READ-POD
-          </h2>
-          <p class="text-[10px] text-slate-400 mt-0.5">Ranking murid yang memperoleh lencana melalui penyelesaian aktiviti.</p>
-        </div>
-        <button type="button" onclick="refreshStudentLeaderboard()" aria-label="Muat semula leaderboard" title="Muat semula ranking" class="w-8 h-8 shrink-0 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-400/30 transition-all cursor-pointer">
-          <i id="leaderboardRefreshIcon" class="fa-solid fa-rotate"></i>
-        </button>
-      </div>
-      <div id="studentLeaderboardList" class="flex flex-col gap-2" aria-live="polite">
-        <p class="text-[11px] text-slate-400 text-center py-2"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Memuatkan ranking...</p>
-      </div>
-      <p class="text-[9px] text-slate-500"><i class="fa-solid fa-shield-halved mr-1"></i> Nama diringkaskan untuk melindungi privasi murid pada laman awam.</p>
-    </section>
+
 
     <div class="bg-amber-950/50 border border-amber-400/40 text-amber-100 text-[11px] leading-relaxed px-3 py-2 rounded-xl">
       <i class="fa-solid fa-circle-info mr-1"></i>
@@ -296,6 +309,8 @@
       <button onclick="nextCard()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border border-indigo-400/30 transition-all cursor-pointer">
         Next Card <i class="fa-solid fa-arrow-right"></i>
       </button>
+    </div>
+
     </div>
 
   </main>
@@ -654,6 +669,38 @@
         select.innerHTML = '<option value="">Senarai murid tidak tersedia</option>';
         renderStudentLeaderboard([], true);
       }
+    }
+
+    function switchStudentTab(tabName) {
+      const showLeaderboard = tabName === 'leaderboard';
+      const practicePanel = document.getElementById('studentPracticeTabPanel');
+      const leaderboardPanel = document.getElementById('studentLeaderboardPanel');
+      const practiceButton = document.getElementById('practiceTabButton');
+      const leaderboardButton = document.getElementById('leaderboardTabButton');
+
+      if (practicePanel) {
+        practicePanel.style.display = showLeaderboard ? 'none' : 'flex';
+        practicePanel.setAttribute('aria-hidden', String(showLeaderboard));
+      }
+      if (leaderboardPanel) {
+        leaderboardPanel.style.display = showLeaderboard ? 'flex' : 'none';
+        leaderboardPanel.setAttribute('aria-hidden', String(!showLeaderboard));
+      }
+
+      if (practiceButton) {
+        practiceButton.setAttribute('aria-selected', String(!showLeaderboard));
+        practiceButton.className = showLeaderboard
+          ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 font-extrabold text-xs py-2.5 px-3 rounded-xl border border-slate-700 transition-all cursor-pointer'
+          : 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-extrabold text-xs py-2.5 px-3 rounded-xl transition-all cursor-pointer';
+      }
+      if (leaderboardButton) {
+        leaderboardButton.setAttribute('aria-selected', String(showLeaderboard));
+        leaderboardButton.className = showLeaderboard
+          ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-extrabold text-xs py-2.5 px-3 rounded-xl transition-all cursor-pointer'
+          : 'bg-slate-800 hover:bg-slate-700 text-slate-300 font-extrabold text-xs py-2.5 px-3 rounded-xl border border-slate-700 transition-all cursor-pointer';
+      }
+
+      if (showLeaderboard) refreshStudentLeaderboard();
     }
 
     function leaderboardStudentLabel(value) {
@@ -1722,6 +1769,7 @@
         nameInput.value = studentName;
       }
       updateBadgePanel();
+      switchStudentTab('practice');
     };
   </script>
 </body>
