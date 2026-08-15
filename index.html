@@ -99,10 +99,10 @@
     <div class="bg-indigo-950/80 border border-indigo-500/50 p-3 rounded-2xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shadow-inner">
       <div class="flex items-center gap-2">
         <i class="fa-solid fa-user-graduate text-amber-400 text-sm sm:text-base"></i>
-        <span class="text-xs font-bold text-indigo-200">Kod Murid / Nama Ringkas:</span>
+        <span class="text-xs font-bold text-indigo-200">Nama Penuh Murid:</span>
       </div>
       <div class="flex-grow flex items-center gap-2">
-        <input type="text" id="studentNameInput" placeholder="Contoh: M05A atau SN" onchange="saveStudentName(this.value)" class="w-full bg-slate-900/90 text-amber-300 font-semibold text-xs sm:text-sm px-3 py-2 rounded-xl border border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder-slate-500 transition-all">
+        <input type="text" id="studentNameInput" placeholder="Masukkan nama penuh murid" onchange="saveStudentName(this.value)" class="w-full bg-slate-900/90 text-amber-300 font-semibold text-xs sm:text-sm px-3 py-2 rounded-xl border border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder-slate-500 transition-all">
         <span id="saveStatusBadge" class="hidden text-[10px] whitespace-nowrap bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-lg border border-emerald-500/30 font-bold">
           <i class="fa-solid fa-cloud-arrow-up"></i> Saved
         </span>
@@ -117,7 +117,7 @@
       <select id="registeredStudentSelect" onchange="selectRegisteredStudent(this.value)" class="w-full bg-slate-950 text-amber-300 font-semibold text-xs sm:text-sm px-3 py-2 rounded-xl border border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer">
         <option value="">Memuatkan kod murid...</option>
       </select>
-      <p class="text-[10px] text-slate-400">Pilih kod/nama samaran. Murid baharu masih boleh menaip kod pada ruang di atas.</p>
+      <p class="text-[10px] text-slate-400">Pilih nama penuh murid. Murid baharu masih boleh menaip nama pada ruang di atas.</p>
     </div>
 
     <div class="bg-amber-950/50 border border-amber-400/40 text-amber-100 text-[11px] leading-relaxed px-3 py-2 rounded-xl">
@@ -250,13 +250,13 @@
       <div class="flex flex-col gap-2">
         <label class="text-xs font-bold text-slate-300">Akses dashboard guru:</label>
         <div class="relative">
-          <input type="password" id="adminPinInput" placeholder="Akses awam dinyahaktifkan" disabled onkeyup="if(event.key==='Enter') verifyAdminPin()" class="w-full bg-slate-950 text-amber-300 text-sm px-4 py-3 rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400 tracking-wider">
+          <input type="password" id="adminPinInput" placeholder="Masukkan kata laluan admin" onkeyup="if(event.key==='Enter') verifyAdminPin()" class="w-full bg-slate-950 text-amber-300 text-sm px-4 py-3 rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400 tracking-wider">
           <button onclick="togglePinVisibility()" class="absolute right-3 top-3 text-slate-400 hover:text-slate-200 text-sm cursor-pointer">
             <i class="fa-solid fa-eye" id="pinEyeIcon"></i>
           </button>
         </div>
         <p id="pinErrorText" class="hidden text-xs text-rose-400 font-semibold mt-1">
-          <i class="fa-solid fa-shield-halved"></i> Dashboard guru tidak diterbitkan pada laman awam. Gunakan rekod guru yang dilindungi.
+          <i class="fa-solid fa-circle-exclamation"></i> Kata laluan tidak sah. Cuba semula.
         </p>
       </div>
 
@@ -265,7 +265,7 @@
           Batal
         </button>
         <button onclick="verifyAdminPin()" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold rounded-xl shadow-lg transition-all cursor-pointer">
-          Akses Tidak Tersedia <i class="fa-solid fa-arrow-right-to-bracket ml-1"></i>
+          Masuk Dashboard <i class="fa-solid fa-arrow-right-to-bracket ml-1"></i>
         </button>
       </div>
     </div>
@@ -382,7 +382,7 @@
           <!-- Table Search Filter -->
           <div class="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-700">
             <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs"></i>
-            <input type="text" id="adminTableSearch" oninput="filterAdminTable()" placeholder="Cari kod murid..." class="bg-transparent text-xs text-amber-300 focus:outline-none w-36 sm:w-48">
+            <input type="text" id="adminTableSearch" oninput="filterAdminTable()" placeholder="Cari nama murid..." class="bg-transparent text-xs text-amber-300 focus:outline-none w-36 sm:w-48">
           </div>
         </div>
 
@@ -392,7 +392,7 @@
             <thead>
               <tr class="bg-indigo-950/80 text-indigo-200 border-b border-indigo-800 font-bold">
                 <th class="p-3">Masa / Tarikh</th>
-                <th class="p-3">Kod Murid</th>
+                <th class="p-3">Nama Murid</th>
                 <th class="p-3">Unit / Topik</th>
                 <th class="p-3">Aktiviti / Sasaran</th>
                 <th class="p-3">Aras Bahan Latihan</th>
@@ -536,13 +536,13 @@
         select.innerHTML = '<option value="">-- Pilih murid berdaftar --</option>';
 
         Array.from(uniqueNames.values())
-          .sort((a, b) => stablePupilCode(a).localeCompare(stablePupilCode(b)))
+          .sort((a, b) => a.localeCompare(b))
           .forEach((rawName, index) => {
             const optionKey = `pupil-${index}`;
             registeredStudentMap.set(optionKey, rawName);
             const option = document.createElement('option');
             option.value = optionKey;
-            option.textContent = stablePupilCode(rawName);
+            option.textContent = rawName;
             option.className = "bg-slate-900 text-white";
             select.appendChild(option);
 
@@ -568,7 +568,7 @@
       localStorage.setItem("read_pod_student_name", studentName);
 
       const nameInput = document.getElementById('studentNameInput');
-      if (nameInput) nameInput.value = stablePupilCode(selectedName);
+      if (nameInput) nameInput.value = selectedName;
 
       const badge = document.getElementById('saveStatusBadge');
       if (badge) {
@@ -873,9 +873,18 @@
     <!-- STREAMING_CHUNK:Building Admin Authentication and Live Student Analytics Engine -->
     // ADMIN PORTAL & DASHBOARD ANALYTICS ENGINE (LIVE SYNC WITH GOOGLE SHEETS)
     function openAdminLoginModal() {
-      // Open the read-only progress dashboard directly. Public views use
-      // privacy-safe pupil labels instead of full names.
-      openAdminDashboard();
+      const modal = document.getElementById('adminLoginModal');
+      const err = document.getElementById('pinErrorText');
+      const input = document.getElementById('adminPinInput');
+      if (modal) {
+        if (err) err.classList.add('hidden');
+        if (input) {
+          input.value = "";
+          input.type = "password";
+        }
+        modal.classList.remove('hidden');
+        setTimeout(() => input?.focus(), 50);
+      }
     }
 
     function closeAdminLoginModal() {
@@ -897,11 +906,23 @@
       }
     }
 
-    function verifyAdminPin() {
-      // A PIN embedded in client-side code is not secure. The public build
-      // intentionally does not expose pupil analytics.
+    async function verifyAdminPin() {
+      const input = document.getElementById('adminPinInput');
       const err = document.getElementById('pinErrorText');
-      if (err) err.classList.remove('hidden');
+      const password = input ? input.value : "";
+      const encoded = new TextEncoder().encode(password);
+      const digest = await crypto.subtle.digest("SHA-256", encoded);
+      const passwordHash = Array.from(new Uint8Array(digest))
+        .map(byte => byte.toString(16).padStart(2, "0"))
+        .join("");
+
+      if (passwordHash === "6051fc84a7a0d74c225fb18a496b09952da5642e60723ecae543298edd7d82d6") {
+        if (input) input.value = "";
+        closeAdminLoginModal();
+        openAdminDashboard();
+      } else {
+        if (err) err.classList.remove('hidden');
+      }
     }
 
     function openAdminDashboard() {
@@ -1077,7 +1098,7 @@
 
         tr.innerHTML = `
           <td class="p-3 text-slate-400">${safeText(row.latestTimestamp)}</td>
-          <td class="p-3 font-bold text-amber-300">${safeText(privacySafeStudentLabel(row.studentName))}</td>
+          <td class="p-3 font-bold text-amber-300">${safeText(row.studentName)}</td>
           <td class="p-3 text-slate-200">${safeText(unitSummary)}</td>
           <td class="p-3 font-semibold text-indigo-300">
             ${safeText(targetSummary)}
@@ -1176,10 +1197,10 @@
       }
 
       let csvContent = "data:text/csv;charset=utf-8,";
-      csvContent += "Masa / Tarikh,Kod Murid,Unit / Topik,Perkataan Sasaran,Aras Bahan Latihan,Ayat Selesai,Jumlah Ayat,Peratus Kemajuan Latihan,Status\n";
+      csvContent += "Masa / Tarikh,Nama Murid,Unit / Topik,Perkataan Sasaran,Aras Bahan Latihan,Ayat Selesai,Jumlah Ayat,Peratus Kemajuan Latihan,Status\n";
 
       analyticsLogs.forEach(row => {
-        csvContent += `"${row.timestamp || ''}","${privacySafeStudentLabel(row.studentName)}","${row.unitTopic || ''}","${row.targetWord || ''}","${row.tpLevel || ''}",${row.sentencesCompleted || 0},${row.totalSentences || 0},${row.completionPercentage || 0}%,"${row.status || ''}"\n`;
+        csvContent += `"${row.timestamp || ''}","${row.studentName || ''}","${row.unitTopic || ''}","${row.targetWord || ''}","${row.tpLevel || ''}",${row.sentencesCompleted || 0},${row.totalSentences || 0},${row.completionPercentage || 0}%,"${row.status || ''}"\n`;
       });
 
       const encodedUri = encodeURI(csvContent);
