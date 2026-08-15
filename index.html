@@ -49,6 +49,40 @@
       0% { transform: scale(1); box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
       100% { transform: scale(1.06); box-shadow: 0 0 25px rgba(239, 68, 68, 0.9); }
     }
+
+    .read-aloud-ready {
+      animation: readyGlow 1.45s ease-in-out infinite alternate;
+    }
+    @keyframes readyGlow {
+      0% { transform: scale(1); box-shadow: 0 0 8px rgba(251, 113, 133, 0.45); }
+      100% { transform: scale(1.035); box-shadow: 0 0 28px rgba(251, 191, 36, 0.9); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .read-aloud-ready, .pulse-mic { animation: none !important; }
+    }
+    body.light-mode {
+      background: radial-gradient(circle at top, #dbeafe 0%, #f8fafc 100%);
+      color: #0f172a;
+    }
+    body.light-mode .glass-card {
+      background: rgba(255, 255, 255, 0.92);
+      border-color: rgba(71, 85, 105, 0.25);
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.14);
+    }
+    body.light-mode main [class*="bg-slate-9"],
+    body.light-mode main [class*="bg-slate-8"],
+    body.light-mode main [class*="bg-indigo-9"] {
+      background-color: rgba(226, 232, 240, 0.9) !important;
+    }
+    body.light-mode main [class*="text-white"],
+    body.light-mode main [class*="text-slate-2"],
+    body.light-mode main [class*="text-slate-3"] {
+      color: #0f172a !important;
+    }
+    body.light-mode main [class*="text-slate-4"],
+    body.light-mode main [class*="text-slate-5"] {
+      color: #475569 !important;
+    }
     /* Custom Scrollbar */
     ::-webkit-scrollbar {
       width: 6px;
@@ -82,6 +116,13 @@
       </div>
       
       <div class="flex items-center gap-2">
+        <button id="themeToggleBtn" onclick="toggleTheme()" aria-label="Tukar tema" title="Light/Dark mode" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 transition-all cursor-pointer">
+          <i id="themeToggleIcon" class="fa-solid fa-sun"></i>
+        </button>
+        <button id="soundToggleBtn" onclick="toggleSuccessSound()" aria-label="Bunyi kejayaan" title="Bunyi kejayaan" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 transition-all cursor-pointer">
+          <i id="soundToggleIcon" class="fa-solid fa-volume-high"></i>
+        </button>
+
         <!-- Live Status Badge -->
         <div id="syncStatusIndicator" class="hidden sm:flex items-center gap-1.5 text-[11px] bg-slate-800/80 text-slate-300 px-2.5 py-1 rounded-full border border-slate-700">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
@@ -118,6 +159,14 @@
         <option value="">Memuatkan kod murid...</option>
       </select>
       <p class="text-[10px] text-slate-400">Pilih nama penuh murid. Murid baharu masih boleh menaip nama pada ruang di atas.</p>
+    </div>
+
+    <div id="badgePanel" class="bg-gradient-to-r from-violet-950/80 to-indigo-950/80 border border-violet-400/40 p-3 rounded-2xl flex items-center justify-between gap-3">
+      <div>
+        <p class="text-xs font-extrabold text-violet-200"><i class="fa-solid fa-medal text-amber-400 mr-1"></i> Lencana Latihan</p>
+        <p id="badgeStatusText" class="text-[10px] text-slate-400 mt-1">Pilih murid untuk merekod kemajuan lencana.</p>
+      </div>
+      <span id="badgeProgressText" class="text-xs font-black text-amber-300 whitespace-nowrap">0 / 10</span>
     </div>
 
     <div class="bg-amber-950/50 border border-amber-400/40 text-amber-100 text-[11px] leading-relaxed px-3 py-2 rounded-xl">
@@ -195,7 +244,7 @@
           <i class="fa-solid fa-volume-high text-base text-amber-300"></i> Listen Model
         </button>
 
-        <button id="micButton" onclick="startSpeechRecognition()" class="bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-bold py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 text-xs sm:text-sm transition-all border border-rose-400/30 cursor-pointer">
+        <button id="micButton" onclick="startSpeechRecognition()" class="read-aloud-ready bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-bold py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 text-xs sm:text-sm transition-all border border-rose-400/30 cursor-pointer">
           <i class="fa-solid fa-microphone text-base text-white"></i> Read Aloud
         </button>
       </div>
@@ -204,6 +253,10 @@
       <div id="feedbackBox" class="min-h-[48px] bg-slate-900/80 border border-slate-700/80 rounded-2xl p-3 text-center text-xs font-semibold text-slate-300 flex items-center justify-center gap-2">
         <span>Tap <b>Read Aloud</b> and read into your Whisper Phone!</span>
       </div>
+
+      <button id="finishReadingBtn" onclick="finishReadingAndReset()" class="hidden w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black py-3 px-4 rounded-2xl shadow-lg items-center justify-center gap-2 text-xs sm:text-sm transition-all border border-emerald-300 cursor-pointer">
+        <i class="fa-solid fa-flag-checkered"></i> FINISH READING & RESET
+      </button>
 
       <!-- Passage Sentence List Checklist -->
       <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-3 flex flex-col gap-2 max-h-36 overflow-y-auto">
@@ -493,10 +546,12 @@
     let registeredStudentMap = new Map();
     let tpChartInstance = null;
     let statusChartInstance = null;
+    let successSoundEnabled = localStorage.getItem("read_pod_sound_enabled") !== "false";
 
     function saveStudentName(val) {
       studentName = val.trim();
       localStorage.setItem("read_pod_student_name", studentName);
+      updateBadgePanel();
       const badge = document.getElementById('saveStatusBadge');
       if (badge) {
         badge.className = "text-[10px] whitespace-nowrap bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-lg border border-emerald-500/30 font-bold";
@@ -566,6 +621,7 @@
 
       studentName = selectedName;
       localStorage.setItem("read_pod_student_name", studentName);
+      updateBadgePanel();
 
       const nameInput = document.getElementById('studentNameInput');
       if (nameInput) nameInput.value = selectedName;
@@ -575,6 +631,153 @@
         badge.className = "text-[10px] whitespace-nowrap bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-lg border border-emerald-500/30 font-bold";
         badge.innerHTML = '<i class="fa-solid fa-check"></i> Dipilih';
         setTimeout(() => { badge.className = "hidden"; }, 2500);
+      }
+    }
+
+    function getPupilBadgeKey() {
+      const identity = String(studentName || '').trim().toLocaleLowerCase();
+      return identity ? "read_pod_completed_cards_" + encodeURIComponent(identity) : "";
+    }
+
+    function getCurrentCardId() {
+      if (!currentList || currentList.length === 0) return "";
+      const item = currentList[currentIndex];
+      return [
+        item.Unit_Topic || item.unit || "",
+        item.Target_Word_Phrase || item.target || "",
+        item.TP_Level || item.level || ""
+      ].map(value => String(value).trim().toLocaleLowerCase()).join("|");
+    }
+
+    function getCompletedCardIds() {
+      const key = getPupilBadgeKey();
+      if (!key) return [];
+      try {
+        const stored = JSON.parse(localStorage.getItem(key) || "[]");
+        return Array.isArray(stored) ? [...new Set(stored)] : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function updateBadgePanel() {
+      const status = document.getElementById('badgeStatusText');
+      const progress = document.getElementById('badgeProgressText');
+      if (!status || !progress) return;
+
+      if (!studentName) {
+        status.innerHTML = "Pilih murid untuk merekod kemajuan lencana.";
+        progress.textContent = "0 / 10";
+        return;
+      }
+
+      const count = getCompletedCardIds().length;
+      progress.textContent = `${Math.min(count, 10)} / 10`;
+      status.innerHTML = count >= 10
+        ? '<span class="text-amber-300 font-extrabold">🏅 READ-POD Champion</span> — ganjaran penyelesaian 10 kad latihan.'
+        : `${10 - count} kad lagi untuk memperoleh <b>READ-POD Champion</b>.`;
+    }
+
+    function awardCurrentCardCompletion() {
+      const key = getPupilBadgeKey();
+      const cardId = getCurrentCardId();
+      if (!key || !cardId) return { count: 0, badgeEarned: false };
+
+      const completed = getCompletedCardIds();
+      const previousCount = completed.length;
+      if (!completed.includes(cardId)) completed.push(cardId);
+      localStorage.setItem(key, JSON.stringify(completed));
+      updateBadgePanel();
+
+      return {
+        count: completed.length,
+        badgeEarned: previousCount < 10 && completed.length >= 10
+      };
+    }
+
+    function playSuccessChime() {
+      if (!successSoundEnabled) return;
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        const context = new AudioContextClass();
+        const now = context.currentTime;
+        [880, 1174.66].forEach((frequency, index) => {
+          const oscillator = context.createOscillator();
+          const gain = context.createGain();
+          oscillator.type = "sine";
+          oscillator.frequency.value = frequency;
+          gain.gain.setValueAtTime(0.0001, now + index * 0.16);
+          gain.gain.exponentialRampToValueAtTime(0.22, now + index * 0.16 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.16 + 0.28);
+          oscillator.connect(gain);
+          gain.connect(context.destination);
+          oscillator.start(now + index * 0.16);
+          oscillator.stop(now + index * 0.16 + 0.3);
+        });
+        setTimeout(() => context.close(), 800);
+      } catch (error) {
+        console.warn("Success sound unavailable:", error);
+      }
+    }
+
+    function toggleSuccessSound() {
+      successSoundEnabled = !successSoundEnabled;
+      localStorage.setItem("read_pod_sound_enabled", String(successSoundEnabled));
+      updateSoundButton();
+      if (successSoundEnabled) playSuccessChime();
+    }
+
+    function updateSoundButton() {
+      const icon = document.getElementById('soundToggleIcon');
+      const button = document.getElementById('soundToggleBtn');
+      if (!icon || !button) return;
+      icon.className = successSoundEnabled ? "fa-solid fa-volume-high" : "fa-solid fa-volume-xmark";
+      button.title = successSoundEnabled ? "Matikan bunyi kejayaan" : "Hidupkan bunyi kejayaan";
+    }
+
+    function applyTheme(theme) {
+      const isLight = theme === "light";
+      document.body.classList.toggle("light-mode", isLight);
+      const icon = document.getElementById('themeToggleIcon');
+      if (icon) icon.className = isLight ? "fa-solid fa-moon" : "fa-solid fa-sun";
+      localStorage.setItem("read_pod_theme", isLight ? "light" : "dark");
+    }
+
+    function toggleTheme() {
+      applyTheme(document.body.classList.contains("light-mode") ? "dark" : "light");
+    }
+
+    function finishReadingAndReset() {
+      window.speechSynthesis?.cancel();
+      studentName = "";
+      localStorage.removeItem("read_pod_student_name");
+
+      const nameInput = document.getElementById('studentNameInput');
+      const pupilSelect = document.getElementById('registeredStudentSelect');
+      const finishButton = document.getElementById('finishReadingBtn');
+      const micButton = document.getElementById('micButton');
+
+      if (nameInput) nameInput.value = "";
+      if (pupilSelect) pupilSelect.value = "";
+      if (finishButton) {
+        finishButton.classList.add('hidden');
+        finishButton.classList.remove('flex');
+      }
+      if (micButton) {
+        micButton.disabled = false;
+        micButton.classList.add('read-aloud-ready');
+        micButton.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+
+      activeSentenceIndex = 0;
+      renderSentenceView();
+      updateBadgePanel();
+
+      const feedback = document.getElementById('feedbackBox');
+      if (feedback) {
+        feedback.className = "min-h-[48px] bg-indigo-950/80 border border-indigo-500/50 rounded-2xl p-3 text-center text-xs font-semibold text-indigo-200 flex items-center justify-center";
+        feedback.innerHTML = '<i class="fa-solid fa-rotate-right text-amber-400"></i> Reader reset. Pilih murid untuk sesi seterusnya.';
       }
     }
 
@@ -722,22 +925,44 @@
 
       activeSentenceIndex = 0;
       renderSentenceView();
+      updateBadgePanel();
     }
 
     function renderSentenceView() {
-      const activeText = currentSentences[activeSentenceIndex] || currentSentences[0];
+      const isComplete = currentSentences.length > 0 && activeSentenceIndex >= currentSentences.length;
+      const activeText = isComplete
+        ? "Passage completed — press Finish Reading & Reset."
+        : (currentSentences[activeSentenceIndex] || currentSentences[0]);
+
       document.getElementById('activeSentenceText').innerText = activeText;
 
-      const progressPercent = Math.round(((activeSentenceIndex) / currentSentences.length) * 100);
+      const progressPercent = isComplete
+        ? 100
+        : Math.round((activeSentenceIndex / currentSentences.length) * 100);
       document.getElementById('sentenceProgressBar').style.width = `${progressPercent}%`;
-      document.getElementById('sentenceProgressText').innerText = `Sentence ${activeSentenceIndex + 1} of ${currentSentences.length}`;
+      document.getElementById('sentenceProgressText').innerText = isComplete
+        ? `Completed ${currentSentences.length} of ${currentSentences.length}`
+        : `Sentence ${activeSentenceIndex + 1} of ${currentSentences.length}`;
 
-      // Reset Feedback
       const feedback = document.getElementById('feedbackBox');
-      feedback.className = "min-h-[48px] bg-slate-900/80 border border-slate-700/80 rounded-2xl p-3 text-center text-xs font-semibold text-slate-300 flex items-center justify-center gap-2";
-      feedback.innerHTML = `<span>Tap <b>Read Aloud</b> and read into your Whisper Phone!</span>`;
+      if (!isComplete) {
+        feedback.className = "min-h-[48px] bg-slate-900/80 border border-slate-700/80 rounded-2xl p-3 text-center text-xs font-semibold text-slate-300 flex items-center justify-center gap-2";
+        feedback.innerHTML = `<span>Tap <b>Read Aloud</b> and read into your Whisper Phone!</span>`;
+      }
 
-      // Render Sentence Checklist
+      const finishButton = document.getElementById('finishReadingBtn');
+      const micButton = document.getElementById('micButton');
+      if (finishButton) {
+        finishButton.classList.toggle('hidden', !isComplete);
+        finishButton.classList.toggle('flex', isComplete);
+      }
+      if (micButton) {
+        micButton.disabled = isComplete;
+        micButton.classList.toggle('read-aloud-ready', !isComplete);
+        micButton.classList.toggle('opacity-50', isComplete);
+        micButton.classList.toggle('cursor-not-allowed', isComplete);
+      }
+
       const container = document.getElementById('sentenceListContainer');
       container.innerHTML = "";
 
@@ -748,7 +973,7 @@
         if (idx < activeSentenceIndex) {
           div.className += "bg-emerald-950/60 border border-emerald-500/30 text-emerald-300";
           div.innerHTML = `<span class="truncate max-w-[85%]">${idx + 1}. ${sent}</span> <i class="fa-solid fa-circle-check text-emerald-400"></i>`;
-        } else if (idx === activeSentenceIndex) {
+        } else if (idx === activeSentenceIndex && !isComplete) {
           div.className += "bg-indigo-900/80 border border-amber-400/60 text-amber-200 font-bold";
           div.innerHTML = `<span class="truncate max-w-[85%]">${idx + 1}. ${sent}</span> <i class="fa-solid fa-circle-play text-amber-400 animate-pulse"></i>`;
         } else {
@@ -781,6 +1006,7 @@
     }
 
     function startSpeechRecognition() {
+      if (activeSentenceIndex >= currentSentences.length) return;
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
         const feedback = document.getElementById('feedbackBox');
@@ -798,12 +1024,14 @@
       const feedback = document.getElementById('feedbackBox');
       const targetSentence = currentSentences[activeSentenceIndex] || "";
 
+      micBtn.classList.remove('read-aloud-ready');
       micBtn.classList.add('pulse-mic');
       feedback.className = "min-h-[48px] bg-indigo-950/80 border border-amber-400/60 rounded-2xl p-3 text-center text-xs font-semibold text-amber-200 flex items-center justify-center gap-2";
       feedback.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-amber-400"></i> Listening... Speak clearly into your Whisper Phone!`;
 
       recognition.onresult = function(event) {
         micBtn.classList.remove('pulse-mic');
+        micBtn.classList.add('read-aloud-ready');
         const spokenText = event.results[0][0].transcript.toLowerCase().trim();
         const targetClean = targetSentence.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
         const spokenClean = spokenText.replace(/[^a-z0-9\s]/g, '').trim();
@@ -829,12 +1057,15 @@
           activeSentenceIndex++;
 
           if (activeSentenceIndex >= currentSentences.length) {
-            document.getElementById('sentenceProgressBar').style.width = "100%";
-            feedback.className = "min-h-[48px] bg-emerald-950/90 border border-emerald-500/60 rounded-2xl p-3 text-center text-xs sm:text-sm font-bold text-emerald-200 flex items-center justify-center gap-2";
-            feedback.innerHTML = `🎉 <b>Awesome Job!</b> You completed the whole passage! Tap <b>Next Card</b>!`;
-            
+            const award = awardCurrentCardCompletion();
             renderSentenceView();
+            playSuccessChime();
             recordProgressToSheet("Completed All Sentences");
+
+            feedback.className = "min-h-[48px] bg-emerald-950/90 border border-emerald-500/60 rounded-2xl p-3 text-center text-xs sm:text-sm font-bold text-emerald-200 flex items-center justify-center gap-2";
+            feedback.innerHTML = award.badgeEarned
+              ? `🏅 <b>READ-POD Champion unlocked!</b> You completed 10 unique cards. Press <b>Finish Reading & Reset</b>.`
+              : `✨ <b>Ching ching!</b> Passage completed correctly. Press <b>Finish Reading & Reset</b>.`;
           } else {
             feedback.className = "min-h-[48px] bg-emerald-950/80 border border-emerald-500/50 rounded-2xl p-3 text-center text-xs sm:text-sm font-semibold text-emerald-200 flex items-center justify-center gap-2";
             feedback.innerHTML = `🌟 <b>Great reading!</b> Moving to Sentence ${activeSentenceIndex + 1}...`;
@@ -849,6 +1080,7 @@
 
       recognition.onerror = function() {
         micBtn.classList.remove('pulse-mic');
+        micBtn.classList.add('read-aloud-ready');
         feedback.className = "min-h-[48px] bg-rose-950/80 border border-rose-500/50 rounded-2xl p-3 text-center text-xs font-semibold text-rose-200 flex items-center justify-center";
         feedback.innerText = "Couldn't catch your voice clearly. Please tap Read Aloud and try again!";
       };
@@ -1214,12 +1446,15 @@
 
     // Initial page initialization
     window.onload = function() {
+      applyTheme(localStorage.getItem("read_pod_theme") || "dark");
+      updateSoundButton();
       fetchLiveData();
       populateRegisteredStudents();
       const nameInput = document.getElementById('studentNameInput');
       if (nameInput && studentName) {
         nameInput.value = studentName;
       }
+      updateBadgePanel();
     };
   </script>
 </body>
