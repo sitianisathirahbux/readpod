@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>READ-POD: Year 5 English Oral Decoder & Live Progress Analytics</title>
+  <title>READ-POD: Year 5 Guided Oral-Reading Practice</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -63,7 +63,7 @@
     }
   </style>
 </head>
-<!-- STREAMING_CHUNK:Rendering main app container and header with Admin Dashboard button -->
+<!-- STREAMING_CHUNK:Rendering main app container and header with Teacher Dashboard Status button -->
 <body class="p-3 sm:p-6 flex flex-col items-center justify-center min-h-screen">
 
   <!-- MAIN STUDENT INTERFACE CONTAINER -->
@@ -77,7 +77,7 @@
         </div>
         <div>
           <h1 class="text-lg sm:text-xl font-bold text-white tracking-wide">READ-POD <span class="text-xs bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-400/30">Year 5 DSKP</span></h1>
-          <p class="text-[11px] text-slate-400">Oral Decoder & Live Progress Analytics</p>
+          <p class="text-[11px] text-slate-400">Guided Oral-Reading Practice & Progress Tracking</p>
         </div>
       </div>
       
@@ -90,7 +90,7 @@
 
         <!-- Admin / Teacher Portal Button -->
         <button onclick="openAdminLoginModal()" class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-xs px-3 py-1.5 rounded-xl shadow-md flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer">
-          <i class="fa-solid fa-user-shield"></i> Admin Dashboard
+          <i class="fa-solid fa-user-shield"></i> Teacher Dashboard Status
         </button>
       </div>
     </div>
@@ -99,14 +99,21 @@
     <div class="bg-indigo-950/80 border border-indigo-500/50 p-3 rounded-2xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shadow-inner">
       <div class="flex items-center gap-2">
         <i class="fa-solid fa-user-graduate text-amber-400 text-sm sm:text-base"></i>
-        <span class="text-xs font-bold text-indigo-200">Nama Murid:</span>
+        <span class="text-xs font-bold text-indigo-200">Kod Murid / Nama Ringkas:</span>
       </div>
       <div class="flex-grow flex items-center gap-2">
-        <input type="text" id="studentNameInput" placeholder="Masukkan nama murid di sini..." onchange="saveStudentName(this.value)" class="w-full bg-slate-900/90 text-amber-300 font-semibold text-xs sm:text-sm px-3 py-2 rounded-xl border border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder-slate-500 transition-all">
+        <input type="text" id="studentNameInput" placeholder="Contoh: M05A atau SN" onchange="saveStudentName(this.value)" class="w-full bg-slate-900/90 text-amber-300 font-semibold text-xs sm:text-sm px-3 py-2 rounded-xl border border-indigo-500/40 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder-slate-500 transition-all">
         <span id="saveStatusBadge" class="hidden text-[10px] whitespace-nowrap bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-lg border border-emerald-500/30 font-bold">
           <i class="fa-solid fa-cloud-arrow-up"></i> Saved
         </span>
       </div>
+    </div>
+
+
+    <div class="bg-amber-950/50 border border-amber-400/40 text-amber-100 text-[11px] leading-relaxed px-3 py-2 rounded-xl">
+      <i class="fa-solid fa-circle-info mr-1"></i>
+      Kemajuan menunjukkan penyelesaian aktiviti latihan, bukan Tahap Penguasaan PBD rasmi.
+      Penentuan TP murid memerlukan evidens dan pengesahan guru.
     </div>
 
     <!-- Meta Filters & Direct Dropdown Selection -->
@@ -116,8 +123,8 @@
         <i class="fa-solid fa-filter text-amber-400 text-xs"></i>
         <select id="levelFilter" onchange="filterData()" class="bg-transparent text-xs font-semibold text-slate-200 focus:outline-none w-full cursor-pointer">
           <option value="ALL" class="bg-slate-900 text-white">All TP Levels</option>
-          <option value="TP2" class="bg-slate-900 text-amber-400">TP2 Focus (Phonics)</option>
-          <option value="TP3" class="bg-slate-900 text-emerald-400">TP3 Focus (Phrases)</option>
+          <option value="TP2" class="bg-slate-900 text-amber-400">Bahan Aras Bahan Latihan2 (Fokus Fonik)</option>
+          <option value="TP3" class="bg-slate-900 text-emerald-400">Bahan Aras Bahan Latihan3 (Fokus Frasa)</option>
         </select>
       </div>
 
@@ -226,20 +233,20 @@
         </div>
         <div>
           <h2 class="text-lg font-bold text-white">Admin / Teacher Access</h2>
-          <p class="text-xs text-slate-400">Portal Analisis & Rekod Penguasaan Murid</p>
+          <p class="text-xs text-slate-400">Portal Kemajuan Latihan Membaca (Akses Guru)</p>
         </div>
       </div>
 
       <div class="flex flex-col gap-2">
-        <label class="text-xs font-bold text-slate-300">Masukkan PIN Admin:</label>
+        <label class="text-xs font-bold text-slate-300">Akses dashboard guru:</label>
         <div class="relative">
-          <input type="password" id="adminPinInput" placeholder="Default PIN: admin1234" onkeyup="if(event.key==='Enter') verifyAdminPin()" class="w-full bg-slate-950 text-amber-300 text-sm px-4 py-3 rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400 tracking-wider">
+          <input type="password" id="adminPinInput" placeholder="Akses awam dinyahaktifkan" disabled onkeyup="if(event.key==='Enter') verifyAdminPin()" class="w-full bg-slate-950 text-amber-300 text-sm px-4 py-3 rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400 tracking-wider">
           <button onclick="togglePinVisibility()" class="absolute right-3 top-3 text-slate-400 hover:text-slate-200 text-sm cursor-pointer">
             <i class="fa-solid fa-eye" id="pinEyeIcon"></i>
           </button>
         </div>
         <p id="pinErrorText" class="hidden text-xs text-rose-400 font-semibold mt-1">
-          <i class="fa-solid fa-circle-exclamation"></i> PIN tidak sah. Gunakan <b>admin2026</b>
+          <i class="fa-solid fa-shield-halved"></i> Dashboard guru tidak diterbitkan pada laman awam. Gunakan rekod guru yang dilindungi.
         </p>
       </div>
 
@@ -248,13 +255,13 @@
           Batal
         </button>
         <button onclick="verifyAdminPin()" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold rounded-xl shadow-lg transition-all cursor-pointer">
-          Masuk Portal Analytics <i class="fa-solid fa-arrow-right-to-bracket ml-1"></i>
+          Akses Tidak Tersedia <i class="fa-solid fa-arrow-right-to-bracket ml-1"></i>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- STREAMING_CHUNK:Building Admin Dashboard Modal Interface, Charts, and Student Table -->
+  <!-- STREAMING_CHUNK:Building Teacher Dashboard Status Modal Interface, Charts, and Student Table -->
   <!-- FULLSCREEN ADMIN ANALYTICS DASHBOARD MODAL -->
   <div id="adminDashboardModal" class="fixed inset-0 bg-slate-950/95 z-50 hidden overflow-y-auto p-3 sm:p-6">
     <div class="max-w-6xl mx-auto flex flex-col gap-6">
@@ -303,17 +310,17 @@
             <span id="kpiCompleted" class="text-3xl font-black text-emerald-400">0</span>
             <i class="fa-solid fa-circle-check text-emerald-400/40 text-2xl"></i>
           </div>
-          <span class="text-[10px] text-emerald-300/80 mt-1">Completed Passage Rate</span>
+          <span class="text-[10px] text-emerald-300/80 mt-1">Completed activity-log count</span>
         </div>
 
         <!-- Average Mastery Percentage -->
         <div class="glass-card rounded-2xl p-4 border-l-4 border-l-indigo-400 flex flex-col justify-between">
-          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Purata Penguasaan</span>
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Purata Kemajuan Latihan</span>
           <div class="flex items-baseline justify-between mt-2">
             <span id="kpiAvgScore" class="text-3xl font-black text-indigo-300">0%</span>
             <i class="fa-solid fa-bullseye text-indigo-400/40 text-2xl"></i>
           </div>
-          <span class="text-[10px] text-indigo-300/80 mt-1">Overall Reading Accuracy</span>
+          <span class="text-[10px] text-indigo-300/80 mt-1">Average passage completion across activity logs</span>
         </div>
 
         <!-- Needs Intervention Count -->
@@ -323,7 +330,7 @@
             <span id="kpiInProgress" class="text-3xl font-black text-rose-400">0</span>
             <i class="fa-solid fa-spinner text-rose-400/40 text-2xl"></i>
           </div>
-          <span class="text-[10px] text-rose-300/80 mt-1">Active Reading Practices</span>
+          <span class="text-[10px] text-rose-300/80 mt-1">Incomplete activity-log count</span>
         </div>
       </div>
 
@@ -333,7 +340,7 @@
         <!-- TP Level Distribution Chart -->
         <div class="glass-card rounded-2xl p-5 border border-slate-700 flex flex-col gap-3">
           <h3 class="text-sm font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-chart-pie text-amber-400"></i> Taburan Sesi Mengikut Aras TP (DSKP)
+            <i class="fa-solid fa-chart-pie text-amber-400"></i> Taburan Rekod Mengikut Aras Bahan
           </h3>
           <div class="relative h-64 w-full flex items-center justify-center">
             <canvas id="tpChart"></canvas>
@@ -343,7 +350,7 @@
         <!-- Status Completion Breakdown Chart -->
         <div class="glass-card rounded-2xl p-5 border border-slate-700 flex flex-col gap-3">
           <h3 class="text-sm font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-chart-column text-emerald-400"></i> Status Kejayaan Membaca Murid
+            <i class="fa-solid fa-chart-column text-emerald-400"></i> Status Penyelesaian Rekod Latihan
           </h3>
           <div class="relative h-64 w-full flex items-center justify-center">
             <canvas id="statusChart"></canvas>
@@ -357,7 +364,7 @@
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div>
             <h3 class="text-base font-bold text-white flex items-center gap-2">
-              <i class="fa-solid fa-table-list text-amber-400"></i> Rekod Log Pembacaan Murid (Live Analytics)
+              <i class="fa-solid fa-table-list text-amber-400"></i> Rekod Aktiviti Latihan Membaca
             </h3>
             <p class="text-xs text-slate-400">Disemak terus dari Google Sheet (Tab Student_Progress)</p>
           </div>
@@ -378,7 +385,7 @@
                 <th class="p-3">Nama Murid</th>
                 <th class="p-3">Unit / Topik</th>
                 <th class="p-3">Perkataan Sasaran</th>
-                <th class="p-3">Aras TP</th>
+                <th class="p-3">Aras Bahan Latihan</th>
                 <th class="p-3">Ayat Selesai</th>
                 <th class="p-3">Penguasaan (%)</th>
                 <th class="p-3">Status</th>
@@ -495,8 +502,8 @@
       const target = item.Target_Word_Phrase || item.target || '';
       const tp = item.TP_Level || item.level || 'TP2';
       const total = currentSentences.length;
-      const completed = activeSentenceIndex;
-      const percent = Math.round((completed / total) * 100);
+      const completed = Math.min(Math.max(activeSentenceIndex, 0), total);
+      const percent = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0;
 
       const payload = {
         studentName: studentName || "Murid Tanpa Nama",
@@ -717,16 +724,24 @@
         const targetClean = targetSentence.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
         const spokenClean = spokenText.replace(/[^a-z0-9\s]/g, '').trim();
 
-        const targetWords = targetClean.split(/\s+/);
-        const spokenWords = spokenClean.split(/\s+/);
+        const targetWords = targetClean.split(/\s+/).filter(Boolean);
+        const spokenWords = spokenClean.split(/\s+/).filter(Boolean);
         let matches = 0;
-        targetWords.forEach(w => {
-          if (spokenWords.includes(w)) matches++;
+        let spokenCursor = 0;
+
+        // Count transcript word matches in the correct order. This is practice
+        // feedback only; it is not a phonetic pronunciation assessment.
+        targetWords.forEach(word => {
+          const foundAt = spokenWords.indexOf(word, spokenCursor);
+          if (foundAt !== -1) {
+            matches++;
+            spokenCursor = foundAt + 1;
+          }
         });
 
-        const matchRatio = matches / targetWords.length;
+        const matchRatio = targetWords.length > 0 ? matches / targetWords.length : 0;
 
-        if (matchRatio >= 0.4 || spokenClean.length >= targetClean.length * 0.4) {
+        if (matchRatio >= 0.7) {
           activeSentenceIndex++;
 
           if (activeSentenceIndex >= currentSentences.length) {
@@ -802,16 +817,10 @@
     }
 
     function verifyAdminPin() {
-      const input = document.getElementById('adminPinInput');
+      // A PIN embedded in client-side code is not secure. The public build
+      // intentionally does not expose pupil analytics.
       const err = document.getElementById('pinErrorText');
-      const pinVal = input ? input.value.trim() : "";
-
-      if (pinVal === "admin2026" || pinVal === "2026" || pinVal === "admin") {
-        closeAdminLoginModal();
-        openAdminDashboard();
-      } else {
-        if (err) err.classList.remove('hidden');
-      }
+      if (err) err.classList.remove('hidden');
     }
 
     function openAdminDashboard() {
@@ -851,13 +860,21 @@
 
     function renderAnalyticsDashboard() {
       // 1. Calculate KPI summary
-      const uniqueStudents = new Set(analyticsLogs.map(l => l.studentName)).size;
-      const completedCount = analyticsLogs.filter(l => l.completionPercentage >= 90 || l.status === "Completed All Sentences").length;
+      const uniqueStudents = new Set(analyticsLogs.map(l => l.studentName).filter(Boolean)).size;
+      const isFullyCompleted = log => {
+        const completed = Number(log.sentencesCompleted) || 0;
+        const total = Number(log.totalSentences) || 0;
+        return total > 0 && completed === total && Number(log.completionPercentage) === 100;
+      };
+      const completedCount = analyticsLogs.filter(isFullyCompleted).length;
       const totalLogs = analyticsLogs.length || 1;
-      const avgScore = analyticsLogs.length > 0 
-        ? Math.round(analyticsLogs.reduce((acc, curr) => acc + (curr.completionPercentage || 0), 0) / totalLogs)
+      const avgScore = analyticsLogs.length > 0
+        ? Math.round(analyticsLogs.reduce((acc, curr) => {
+            const value = Math.min(100, Math.max(0, Number(curr.completionPercentage) || 0));
+            return acc + value;
+          }, 0) / totalLogs)
         : 0;
-      const inProgressCount = analyticsLogs.filter(l => l.completionPercentage < 90).length;
+      const inProgressCount = analyticsLogs.filter(log => !isFullyCompleted(log)).length;
 
       document.getElementById('kpiTotalStudents').innerText = uniqueStudents;
       document.getElementById('kpiCompleted').innerText = completedCount;
@@ -885,7 +902,7 @@
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-800/50 transition-all";
 
-        const isComplete = log.completionPercentage >= 90 || log.status === "Completed All Sentences";
+        const isComplete = Number(log.totalSentences) > 0 && Number(log.sentencesCompleted) === Number(log.totalSentences) && Number(log.completionPercentage) === 100;
         const statusBadge = isComplete 
           ? `<span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-bold text-[10px]">✓ Tamat</span>`
           : `<span class="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold text-[10px]">⏳ In Progress</span>`;
@@ -927,9 +944,9 @@
         tpChartInstance = new Chart(ctx1, {
           type: 'doughnut',
           data: {
-            labels: ['TP2 Focus (Phonics)', 'TP3 Focus (Phrases)'],
+            labels: ['Bahan Aras Bahan Latihan2 (Fokus Fonik)', 'Bahan Aras Bahan Latihan3 (Fokus Frasa)'],
             datasets: [{
-              data: [tp2Count || 1, tp3Count || 1],
+              data: [tp2Count, tp3Count],
               backgroundColor: ['#f5c542', '#34d399'],
               borderColor: '#0f172a',
               borderWidth: 3
@@ -946,8 +963,11 @@
       }
 
       // 2. Status Completion Bar Chart
-      const completedCount = analyticsLogs.filter(l => l.completionPercentage >= 90 || l.status === "Completed All Sentences").length;
-      const inProgressCount = analyticsLogs.filter(l => l.completionPercentage < 90).length;
+      const isFullyCompleted = log => Number(log.totalSentences) > 0
+        && Number(log.sentencesCompleted) === Number(log.totalSentences)
+        && Number(log.completionPercentage) === 100;
+      const completedCount = analyticsLogs.filter(isFullyCompleted).length;
+      const inProgressCount = analyticsLogs.filter(log => !isFullyCompleted(log)).length;
 
       const ctx2 = document.getElementById('statusChart');
       if (ctx2) {
@@ -955,9 +975,9 @@
         statusChartInstance = new Chart(ctx2, {
           type: 'bar',
           data: {
-            labels: ['Selesai Penuh (100%)', 'Dalam Sesi Latihan'],
+            labels: ['Semua Ayat Selesai (100%)', 'Latihan Belum Selesai'],
             datasets: [{
-              label: 'Bilangan Sesi Pembacaan',
+              label: 'Bilangan Rekod Aktiviti',
               data: [completedCount, inProgressCount],
               backgroundColor: ['#10b981', '#f59e0b'],
               borderRadius: 8
@@ -985,7 +1005,7 @@
       }
 
       let csvContent = "data:text/csv;charset=utf-8,";
-      csvContent += "Masa / Tarikh,Nama Murid,Unit / Topik,Perkataan Sasaran,Aras TP,Ayat Selesai,Jumlah Ayat,Peratus Penguasaan,Status\n";
+      csvContent += "Masa / Tarikh,Nama Murid,Unit / Topik,Perkataan Sasaran,Aras Bahan Latihan,Ayat Selesai,Jumlah Ayat,Peratus Kemajuan Latihan,Status\n";
 
       analyticsLogs.forEach(row => {
         csvContent += `"${row.timestamp || ''}","${row.studentName || ''}","${row.unitTopic || ''}","${row.targetWord || ''}","${row.tpLevel || ''}",${row.sentencesCompleted || 0},${row.totalSentences || 0},${row.completionPercentage || 0}%,"${row.status || ''}"\n`;
