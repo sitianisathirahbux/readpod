@@ -366,7 +366,7 @@
             <h3 class="text-base font-bold text-white flex items-center gap-2">
               <i class="fa-solid fa-table-list text-amber-400"></i> Rekod Aktiviti Latihan Membaca
             </h3>
-            <p class="text-xs text-slate-400">Disemak terus dari Google Sheet (Tab Student_Progress)</p>
+            <p class="text-xs text-slate-400">Satu baris bagi setiap murid • Rekod terkini setiap aktiviti digunakan</p>
           </div>
           
           <!-- Table Search Filter -->
@@ -384,7 +384,7 @@
                 <th class="p-3">Masa / Tarikh</th>
                 <th class="p-3">Kod Murid</th>
                 <th class="p-3">Unit / Topik</th>
-                <th class="p-3">Perkataan Sasaran</th>
+                <th class="p-3">Aktiviti / Sasaran</th>
                 <th class="p-3">Aras Bahan Latihan</th>
                 <th class="p-3">Ayat Selesai</th>
                 <th class="p-3">Kemajuan Latihan (%)</th>
@@ -904,23 +904,104 @@
         return;
       }
 
-      logs.forEach(log => {
+      const safeText = value => String(value ?? '-').replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+      })[char]);
+
+      // Keep only the latest log for each pupil + activity, then combine all
+      // activities into one summary row per pupil.
+      const pupils = new Map();
+
+      logs.forEach((log, index) => {
+        const rawName = String(log.studentName || "Murid Tanpa Nama").trim();
+        const pupilKey = rawName.toLocaleLowerCase();
+        const activityKey = [
+          log.unitTopic || '',
+          log.targetWord || '',
+          log.tpLevel || ''
+        ].map(value => String(value).trim().toLocaleLowerCase()).join('|');
+
+        const parsedTime = Date.parse(log.timestamp);
+        const sortKey = Number.isFinite(parsedTime) ? parsedTime : index;
+
+        if (!pupils.has(pupilKey)) {
+          pupils.set(pupilKey, {
+            studentName: rawName,
+            activities: new Map(),
+            latestTimestamp: log.timestamp || '-',
+            latestSortKey: sortKey
+          });
+        }
+
+        const pupil = pupils.get(pupilKey);
+        const previous = pupil.activities.get(activityKey);
+
+        if (!previous || sortKey >= previous.sortKey) {
+          pupil.activities.set(activityKey, { log, sortKey });
+        }
+
+        if (sortKey >= pupil.latestSortKey) {
+          pupil.latestTimestamp = log.timestamp || '-';
+          pupil.latestSortKey = sortKey;
+        }
+      });
+
+      const groupedRows = Array.from(pupils.values()).map(pupil => {
+        const activityLogs = Array.from(pupil.activities.values()).map(item => item.log);
+        const totalSentences = activityLogs.reduce((sum, log) => {
+          return sum + Math.max(0, Number(log.totalSentences) || 0);
+        }, 0);
+        const sentencesCompleted = activityLogs.reduce((sum, log) => {
+          const total = Math.max(0, Number(log.totalSentences) || 0);
+          const completed = Math.max(0, Number(log.sentencesCompleted) || 0);
+          return sum + Math.min(completed, total);
+        }, 0);
+        const progress = totalSentences > 0
+          ? Math.min(100, Math.round((sentencesCompleted / totalSentences) * 100))
+          : 0;
+
+        return {
+          studentName: pupil.studentName,
+          latestTimestamp: pupil.latestTimestamp,
+          units: [...new Set(activityLogs.map(log => log.unitTopic).filter(Boolean))],
+          targets: [...new Set(activityLogs.map(log => log.targetWord).filter(Boolean))],
+          levels: [...new Set(activityLogs.map(log => log.tpLevel).filter(Boolean))],
+          activityCount: activityLogs.length,
+          sentencesCompleted,
+          totalSentences,
+          progress,
+          isComplete: totalSentences > 0 && sentencesCompleted === totalSentences
+        };
+      }).sort((a, b) => privacySafeStudentLabel(a.studentName).localeCompare(
+        privacySafeStudentLabel(b.studentName)
+      ));
+
+      groupedRows.forEach(row => {
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-800/50 transition-all";
 
-        const isComplete = Number(log.totalSentences) > 0 && Number(log.sentencesCompleted) === Number(log.totalSentences) && Number(log.completionPercentage) === 100;
-        const statusBadge = isComplete 
+        const statusBadge = row.isComplete
           ? `<span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-bold text-[10px]">✓ Tamat</span>`
-          : `<span class="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold text-[10px]">⏳ In Progress</span>`;
+          : `<span class="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold text-[10px]">⏳ Dalam Latihan</span>`;
+
+        const unitSummary = row.units.length > 2
+          ? `${row.units.slice(0, 2).join(', ')} +${row.units.length - 2}`
+          : (row.units.join(', ') || '-');
+        const targetSummary = row.targets.length > 2
+          ? `${row.targets.slice(0, 2).join(', ')} +${row.targets.length - 2}`
+          : (row.targets.join(', ') || '-');
 
         tr.innerHTML = `
-          <td class="p-3 text-slate-400">${log.timestamp || '-'}</td>
-          <td class="p-3 font-bold text-amber-300">${privacySafeStudentLabel(log.studentName)}</td>
-          <td class="p-3 text-slate-200">${log.unitTopic || '-'}</td>
-          <td class="p-3 font-semibold text-indigo-300">${log.targetWord || '-'}</td>
-          <td class="p-3 font-bold text-amber-400">${log.tpLevel || 'TP2'}</td>
-          <td class="p-3 text-slate-300">${log.sentencesCompleted || 0} / ${log.totalSentences || 0}</td>
-          <td class="p-3 font-bold text-emerald-400">${log.completionPercentage || 0}%</td>
+          <td class="p-3 text-slate-400">${safeText(row.latestTimestamp)}</td>
+          <td class="p-3 font-bold text-amber-300">${safeText(privacySafeStudentLabel(row.studentName))}</td>
+          <td class="p-3 text-slate-200">${safeText(unitSummary)}</td>
+          <td class="p-3 font-semibold text-indigo-300">
+            ${safeText(targetSummary)}
+            <span class="block text-[9px] text-slate-500 mt-1">${row.activityCount} aktiviti unik</span>
+          </td>
+          <td class="p-3 font-bold text-amber-400">${safeText(row.levels.join(', ') || '-')}</td>
+          <td class="p-3 text-slate-300">${row.sentencesCompleted} / ${row.totalSentences}</td>
+          <td class="p-3 font-bold text-emerald-400">${row.progress}%</td>
           <td class="p-3">${statusBadge}</td>
         `;
 
