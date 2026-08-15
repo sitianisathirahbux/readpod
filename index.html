@@ -789,15 +789,15 @@
           const gain = context.createGain();
           oscillator.type = "sine";
           oscillator.frequency.value = frequency;
-          gain.gain.setValueAtTime(0.0001, now + index * 0.16);
-          gain.gain.exponentialRampToValueAtTime(0.36, now + index * 0.16 + 0.02);
-          gain.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.16 + 0.28);
+          gain.gain.setValueAtTime(0.0001, now + index * 0.09);
+          gain.gain.exponentialRampToValueAtTime(0.36, now + index * 0.09 + 0.015);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.09 + 0.16);
           oscillator.connect(gain);
           gain.connect(context.destination);
-          oscillator.start(now + index * 0.16);
-          oscillator.stop(now + index * 0.16 + 0.3);
+          oscillator.start(now + index * 0.09);
+          oscillator.stop(now + index * 0.09 + 0.18);
         });
-        setTimeout(() => context.close(), 800);
+        setTimeout(() => context.close(), 450);
       } catch (error) {
         console.warn("Success sound unavailable:", error);
       }
@@ -811,8 +811,8 @@
         const audioCtx = new AudioCtx();
         const now = audioCtx.currentTime;
         const notes = [
-          { frequency: 392.00, start: 0.00, duration: 0.14 },
-          { frequency: 293.66, start: 0.13, duration: 0.22 }
+          { frequency: 392.00, start: 0.00, duration: 0.09 },
+          { frequency: 293.66, start: 0.075, duration: 0.13 }
         ];
 
         notes.forEach(({ frequency, start, duration }) => {
@@ -821,7 +821,7 @@
           oscillator.type = "triangle";
           oscillator.frequency.setValueAtTime(frequency, now + start);
           gain.gain.setValueAtTime(0.0001, now + start);
-          gain.gain.exponentialRampToValueAtTime(0.26, now + start + 0.025);
+          gain.gain.exponentialRampToValueAtTime(0.26, now + start + 0.015);
           gain.gain.exponentialRampToValueAtTime(0.0001, now + start + duration);
           oscillator.connect(gain);
           gain.connect(audioCtx.destination);
@@ -829,7 +829,7 @@
           oscillator.stop(now + start + duration);
         });
 
-        setTimeout(() => audioCtx.close(), 650);
+        setTimeout(() => audioCtx.close(), 350);
       } catch (error) {
         console.warn("Try-again sound could not be played:", error);
       }
