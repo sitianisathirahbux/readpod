@@ -1529,15 +1529,16 @@
 
     function playSentenceAudio() {
       const activeText = currentSentences[activeSentenceIndex] || "";
-      speakText(activeText);
+      // A slightly slower model supports pupils who are still decoding the sentence.
+      speakText(activeText, 0.72);
     }
 
-    function speakText(text) {
+    function speakText(text, rate = 0.85) {
       if (!text) return;
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-US';
-      utterance.rate = 0.85;
+      utterance.rate = rate;
       window.speechSynthesis.speak(utterance);
     }
 
