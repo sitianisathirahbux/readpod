@@ -161,7 +161,7 @@
           <h2 id="studentLeaderboardTitle" class="text-xs font-extrabold text-amber-200">
             <i class="fa-solid fa-trophy text-amber-400 mr-1"></i> Leaderboard READ-POD
           </h2>
-          <p class="text-[10px] text-slate-400 mt-0.5">Friends' reading progress ranked by completion of 10 cards.</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">Friends ranked by unit quizzes passed and topic badges unlocked.</p>
         </div>
         <button type="button" onclick="refreshStudentLeaderboard()" aria-label="Refresh leaderboard" title="Refresh ranking" class="w-8 h-8 shrink-0 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-400/30 transition-all cursor-pointer">
           <i id="leaderboardRefreshIcon" class="fa-solid fa-rotate"></i>
@@ -771,114 +771,81 @@
       return parts[0] + " " + lastPart.charAt(0).toUpperCase() + ".";
     }
 
+    function leaderboardBadgeForActivity(row) {
+      const text=`${row?.unitTopic||""} ${row?.targetWord||""}`.toLocaleLowerCase();
+      const themes=[
+        {keywords:["town","city","shopping"],icon:"🏙️",topic:"Towns & Cities",label:"City Reader"},
+        {keywords:["day","routine","email","tidy"],icon:"⏰",topic:"Days & Routines",label:"Routine Reader"},
+        {keywords:["weather","storm","blizzard","thunder"],icon:"⛈️",topic:"Wild Weather",label:"Weather Reader"},
+        {keywords:["learning","class","school","geography"],icon:"📚",topic:"Learning World",label:"Learning Explorer"},
+        {keywords:["food","health","breakfast","vegetable","fruit"],icon:"🍎",topic:"Food & Health",label:"Healthy Reader"},
+        {keywords:["sport","gymnastics","athlete"],icon:"🏆",topic:"Sport & Leisure",label:"Sport Reader"},
+        {keywords:["growing","appearance","height","honest"],icon:"🌱",topic:"Growing Up",label:"Growing Reader"},
+        {keywords:["away","hiking","mountain","souvenir","travel"],icon:"✈️",topic:"Going Away",label:"Travel Reader"}
+      ];
+      return themes.find(theme=>theme.keywords.some(keyword=>text.includes(keyword)))||{icon:"🎖️",topic:String(row?.unitTopic||"Reading"),label:"Reading Explorer"};
+    }
+
     function renderStudentLeaderboard(rows, unavailable = false) {
-      const list = document.getElementById('studentLeaderboardList');
-      if (!list) return;
+      const list=document.getElementById("studentLeaderboardList");
+      if(!list)return;
+      if(unavailable){list.innerHTML='<p class="text-[11px] text-amber-300 text-center py-2">The ranking could not be loaded. Press the refresh button.</p>';return;}
 
-      if (unavailable) {
-        list.innerHTML = '<p class="text-[11px] text-amber-300 text-center py-2">The ranking could not be loaded. Press the refresh button.</p>';
-        return;
-      }
-
-      const pupils = new Map();
-      (Array.isArray(rows) ? rows : []).forEach((row, rowIndex) => {
-        const rawName = String(row.studentName || '').trim();
-        if (!rawName || ["Murid Tanpa Nama", "Unnamed Pupil"].includes(rawName)) return;
-
-        const pupilKey = rawName.toLocaleLowerCase();
-        const activityKey = [
-          row.unitTopic || '',
-          row.targetWord || '',
-          row.tpLevel || ''
-        ].map(value => String(value).trim().toLocaleLowerCase()).join('|');
-        if (!activityKey.replace(/\|/g, '')) return;
-
-        const parsedTime = Date.parse(row.timestamp);
-        const sortKey = Number.isFinite(parsedTime) ? parsedTime : rowIndex;
-        if (!pupils.has(pupilKey)) {
-          pupils.set(pupilKey, { studentName: rawName, activities: new Map() });
+      const pupils=new Map();
+      (Array.isArray(rows)?rows:[]).forEach((row,rowIndex)=>{
+        const rawName=String(row.studentName||"").trim();
+        if(!rawName||["Murid Tanpa Nama","Unnamed Pupil"].includes(rawName))return;
+        const pupilKey=rawName.toLocaleLowerCase();
+        if(!pupils.has(pupilKey))pupils.set(pupilKey,{studentName:rawName,activities:new Map(),badges:new Map()});
+        const pupil=pupils.get(pupilKey);
+        const activityKey=[row.unitTopic||"",row.targetWord||"",row.tpLevel||""].map(value=>String(value).trim().toLocaleLowerCase()).join("|");
+        const parsedTime=Date.parse(row.timestamp),sortKey=Number.isFinite(parsedTime)?parsedTime:rowIndex;
+        if(activityKey.replace(/\|/g,"")){
+          const previous=pupil.activities.get(activityKey);
+          if(!previous||sortKey>=previous.sortKey)pupil.activities.set(activityKey,{row,sortKey});
         }
-
-        const previous = pupils.get(pupilKey).activities.get(activityKey);
-        if (!previous || sortKey >= previous.sortKey) {
-          pupils.get(pupilKey).activities.set(activityKey, { row, sortKey });
+        const status=String(row.status||"").toLocaleLowerCase();
+        if(status.includes("completed unit and quiz passed")){
+          const badge=leaderboardBadgeForActivity(row);
+          pupil.badges.set(badge.topic,{...badge,sortKey});
         }
       });
 
-      const ranking = Array.from(pupils.values()).map(pupil => {
-        const completedCards = Array.from(pupil.activities.values()).filter(({ row }) => {
-          const total = Math.max(0, Number(row.totalSentences) || 0);
-          const completed = Math.max(0, Number(row.sentencesCompleted) || 0);
-          const percentage = Math.max(0, Number(row.completionPercentage) || 0);
-          const status = String(row.status || '').toLocaleLowerCase();
-          return percentage >= 100
-            || (total > 0 && completed >= total)
-            || status.includes('complete')
-            || status.includes('tamat');
+      const ranking=Array.from(pupils.values()).map(pupil=>{
+        const readingCompleted=Array.from(pupil.activities.values()).filter(({row})=>{
+          const total=Math.max(0,Number(row.totalSentences)||0),completed=Math.max(0,Number(row.sentencesCompleted)||0),percentage=Math.max(0,Number(row.completionPercentage)||0),status=String(row.status||"").toLocaleLowerCase();
+          return percentage>=100||(total>0&&completed>=total)||status.includes("complete")||status.includes("tamat");
         }).length;
+        const badgeMap=new Map(pupil.badges);
+        if(studentName&&pupil.studentName.toLocaleLowerCase()===studentName.toLocaleLowerCase()){
+          getEarnedTopicBadges().forEach(badge=>badgeMap.set(badge.topic||badge.label,badge));
+        }
+        const badges=Array.from(badgeMap.values());
+        return {studentName:pupil.studentName,readingCompleted,badges,badgeCount:badges.length};
+      }).filter(pupil=>pupil.readingCompleted>0||pupil.badgeCount>0)
+        .sort((x,y)=>y.badgeCount-x.badgeCount||y.readingCompleted-x.readingCompleted||leaderboardStudentLabel(x.studentName).localeCompare(leaderboardStudentLabel(y.studentName)))
+        .slice(0,10);
 
-        return {
-          studentName: pupil.studentName,
-          completedCards,
-          progressCards: Math.min(completedCards, 10),
-          badgeEarned: completedCards >= 10
-        };
-      })
-        .filter(pupil => pupil.completedCards > 0)
-        .sort((a, b) => b.progressCards - a.progressCards
-          || b.completedCards - a.completedCards
-          || leaderboardStudentLabel(a.studentName).localeCompare(leaderboardStudentLabel(b.studentName)))
-        .slice(0, 10);
+      if(!ranking.length){list.innerHTML='<p class="text-[11px] text-slate-400 text-center py-2">No unit quiz badges have been unlocked yet.</p>';return;}
+      list.innerHTML="";
+      ranking.forEach((pupil,index)=>{
+        const row=document.createElement("div"),isCurrentPupil=studentName&&pupil.studentName.toLocaleLowerCase()===studentName.toLocaleLowerCase();
+        row.className=`flex items-center justify-between gap-3 rounded-xl px-3 py-2 border ${isCurrentPupil?"bg-indigo-500/20 border-indigo-400/60":"bg-slate-950/55 border-slate-700/70"}`;
+        const left=document.createElement("div");left.className="flex items-center gap-2 min-w-0";
+        const rank=document.createElement("span");rank.className="w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-xs font-black "+(index===0?"bg-amber-400 text-slate-950":index===1?"bg-slate-300 text-slate-900":index===2?"bg-orange-700 text-orange-100":"bg-slate-800 text-slate-300");rank.textContent=String(index+1);
+        const identity=document.createElement("div");identity.className="min-w-0";
+        const name=document.createElement("p");name.className="text-[11px] font-extrabold text-slate-100 truncate";name.textContent=leaderboardStudentLabel(pupil.studentName)+(isCurrentPupil?" (You)":"");
+        const detail=document.createElement("p");detail.className="text-[9px] text-slate-400";detail.textContent=pupil.badgeCount?`${pupil.badgeCount} unit badge${pupil.badgeCount===1?"":"s"} unlocked`:"No quiz badge unlocked yet";
+        identity.append(name,detail);left.append(rank,identity);
 
-      if (ranking.length === 0) {
-        list.innerHTML = '<p class="text-[11px] text-slate-400 text-center py-2">No pupils have completed a reading card yet.</p>';
-        return;
-      }
-
-      list.innerHTML = "";
-      ranking.forEach((pupil, index) => {
-        const row = document.createElement('div');
-        const isCurrentPupil = studentName
-          && pupil.studentName.toLocaleLowerCase() === studentName.toLocaleLowerCase();
-        row.className = `flex items-center justify-between gap-3 rounded-xl px-3 py-2 border ${
-          isCurrentPupil
-            ? 'bg-indigo-500/20 border-indigo-400/60'
-            : 'bg-slate-950/55 border-slate-700/70'
-        }`;
-
-        const left = document.createElement('div');
-        left.className = "flex items-center gap-2 min-w-0";
-
-        const rank = document.createElement('span');
-        rank.className = "w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-xs font-black " + (
-          index === 0 ? "bg-amber-400 text-slate-950"
-          : index === 1 ? "bg-slate-300 text-slate-900"
-          : index === 2 ? "bg-orange-700 text-orange-100"
-          : "bg-slate-800 text-slate-300"
-        );
-        rank.textContent = String(index + 1);
-
-        const identity = document.createElement('div');
-        identity.className = "min-w-0";
-        const name = document.createElement('p');
-        name.className = "text-[11px] font-extrabold text-slate-100 truncate";
-        name.textContent = leaderboardStudentLabel(pupil.studentName) + (isCurrentPupil ? " (You)" : "");
-        const detail = document.createElement('p');
-        detail.className = "text-[9px] text-slate-400";
-        detail.textContent = pupil.badgeEarned
-          ? 'READ-POD Champion'
-          : `${10 - pupil.progressCards} more cards to earn the badge`;
-        identity.append(name, detail);
-        left.append(rank, identity);
-
-        const badgeCount = document.createElement('span');
-        badgeCount.className = "shrink-0 text-[10px] font-black text-amber-300 bg-amber-500/10 border border-amber-400/30 px-2 py-1 rounded-lg";
-        badgeCount.textContent = pupil.badgeEarned
-          ? `🏅 ${pupil.progressCards} / 10 cards`
-          : `${pupil.progressCards} / 10 cards`;
-
-        row.append(left, badgeCount);
-        list.appendChild(row);
+        const badgeBox=document.createElement("div");badgeBox.className="shrink-0 flex items-center gap-1 bg-amber-500/10 border border-amber-400/30 px-2 py-1 rounded-lg";badgeBox.setAttribute("aria-label",`${pupil.badgeCount} badges unlocked`);
+        if(pupil.badges.length){
+          pupil.badges.forEach(badge=>{const icon=document.createElement("span");icon.className="text-lg leading-none";icon.textContent=badge.icon;icon.title=badge.label||badge.topic||"Unlocked badge";badgeBox.appendChild(icon);});
+          const count=document.createElement("span");count.className="text-[9px] font-black text-amber-300 ml-1";count.textContent=`×${pupil.badgeCount}`;badgeBox.appendChild(count);
+        } else {
+          const locked=document.createElement("span");locked.className="text-[10px] font-bold text-slate-400";locked.textContent="🔒 0";badgeBox.appendChild(locked);
+        }
+        row.append(left,badgeBox);list.appendChild(row);
       });
     }
 
