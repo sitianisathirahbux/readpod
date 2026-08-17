@@ -1121,7 +1121,7 @@
       activeQuiz={set:Number(setNumber)||getEarnedTopicBadges().length+1,unitQuiz:true,cardId,sourceItem,mode:"independent",questions:buildSetQuizQuestions(false,sourceItem),hintsUsed:0,badge:getCurrentTopicBadge(),passed:null};
       document.getElementById("quizSetLabel").textContent=`${itemUnit(sourceItem)} • Unit Comprehension Check`;
       const resultNote=document.getElementById("quizResultNote");
-      if(resultNote)resultNote.textContent="Pass requirement: at least 3/4 auto-marked answers and a complete short response. This is not an official TP decision.";
+      if(resultNote)resultNote.textContent="Pass requirement: at least 3/4 auto-marked answers and a short response of at least five words. This is not an official TP decision.";
       resetQuizResultActions();
       document.getElementById("quizModePanel").classList.add("hidden");
       document.getElementById("quizResultPanel").classList.add("hidden");
@@ -1227,7 +1227,7 @@
         playTryAgainSound();
         document.getElementById("quizResultBadge").textContent="🔁";
         document.getElementById("quizResultTitle").textContent="Read the Unit Again";
-        document.getElementById("quizResultScore").textContent=`Score: ${score} / 4 • Minimum: 3 / 4`;
+        document.getElementById("quizResultScore").textContent=`Score: ${score} / 4 • Short response: ${words} / 5 words`;
         document.getElementById("quizReadinessMessage").textContent=readiness;
         if(note)note.textContent="No badge was awarded. Closing this window returns the pupil to Sentence 1 of the same unit.";
         if(proceed){proceed.innerHTML='<i class="fa-solid fa-rotate-right mr-1"></i>Repeat This Unit';proceed.setAttribute("onclick","repeatUnitAfterQuiz()");}
