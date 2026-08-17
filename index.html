@@ -93,6 +93,34 @@
     body.light-mode main [class*="text-slate-5"] {
       color: #475569 !important;
     }
+    body.light-mode main [class*="bg-violet-9"] {
+      background-color: rgba(237, 233, 254, 0.94) !important;
+    }
+    body.light-mode main [class*="text-indigo-2"],
+    body.light-mode main [class*="text-indigo-3"],
+    body.light-mode main [class*="text-violet-2"],
+    body.light-mode main [class*="text-violet-3"] {
+      color: #4c1d95 !important;
+    }
+    body.light-mode #listenWordBtn {
+      background: #e0e7ff !important;
+      color: #312e81 !important;
+      border-color: #6366f1 !important;
+    }
+    body.light-mode #listenWordBtn i {
+      color: #78350f !important;
+    }
+    body.light-mode #targetWord {
+      color: #854d0e !important;
+    }
+    body.light-mode #tpBadge,
+    body.light-mode #badgeProgressText {
+      color: #78350f !important;
+    }
+    body.light-mode #tpBadge {
+      background: #fef3c7 !important;
+      border-color: #d97706 !important;
+    }
     /* Custom Scrollbar */
     ::-webkit-scrollbar {
       width: 6px;
@@ -249,7 +277,7 @@
       </div>
 
       <div class="flex justify-center gap-2 mt-1">
-        <button onclick="playWordAudio()" class="text-xs bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all cursor-pointer">
+        <button id="listenWordBtn" onclick="playWordAudio()" class="text-xs bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all cursor-pointer">
           <i class="fa-solid fa-volume-up text-amber-400"></i> Listen Word
         </button>
       </div>
