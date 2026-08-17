@@ -352,7 +352,7 @@
         <div id="quizResultBadge" class="text-6xl mb-3">🎖️</div><h3 id="quizResultTitle" class="text-xl font-black text-white">Badge Unlocked!</h3><p id="quizResultScore" class="text-lg font-black text-amber-300 mt-2"></p>
         <p id="quizReadinessMessage" class="text-sm text-slate-200 mt-3 bg-slate-950/60 border border-slate-700 rounded-2xl p-4"></p>
         <p id="quizResultNote" class="text-[11px] text-slate-400 mt-3">Your short answer is saved for teacher review. This is a readiness indicator, not an official TP decision.</p>
-        <div class="flex flex-col sm:flex-row justify-center gap-3 mt-5"><button onclick="retakeSetQuiz()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold border border-slate-600"><i class="fa-solid fa-rotate-right mr-1"></i>Try Again</button><button onclick="closeSetQuizModal()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold"><i class="fa-solid fa-check mr-1"></i>Continue Reading</button></div>
+        <div class="flex flex-col sm:flex-row justify-center gap-3 mt-5"><button id="quizRetakeBtn" onclick="retakeSetQuiz()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold border border-slate-600"><i class="fa-solid fa-rotate-right mr-1"></i>Try Again</button><button id="quizContinueBtn" onclick="closeSetQuizModal()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold"><i class="fa-solid fa-check mr-1"></i>Continue Reading</button></div>
       </div>
     </div>
   </div>
@@ -1051,29 +1051,26 @@
       const results=getQuizResults(); results.push(result); localStorage.setItem(key,JSON.stringify(results));
     }
     function getPendingQuizSet() {
-      const total=Math.floor(getCompletedCardIds().length/10);
-      const quizzes=new Set(getQuizResults().map(x=>Number(x.set)));
-      const badges=new Set(getEarnedTopicBadges().map(x=>Number(x.set)));
-      for(let set=1;set<=total;set++) if(!quizzes.has(set)&&!badges.has(set)) return set;
       return 0;
     }
     function updateBadgePanel() {
       const status=document.getElementById("badgeStatusText"), progress=document.getElementById("badgeProgressText");
       if(!status||!progress)return;
       if(!studentName){status.innerHTML="Select a pupil to record badge progress.";progress.textContent="0 / 10";return;}
-      const count=getCompletedCardIds().length, badges=getEarnedTopicBadges(), pending=getPendingQuizSet();
-      const setProgress=pending?10:count%10; progress.textContent=`${setProgress} / 10`;
+      const total=Math.max(1,currentSentences.length||10);
+      const read=Math.min(activeSentenceIndex,total);
+      progress.textContent=`${read} / ${total}`;
+      const badges=getEarnedTopicBadges();
       const summary=badges.length?badges.map(x=>`${x.icon} <b>${x.label}</b>`).join(" • ")+"<br>":"";
-      if(pending) status.innerHTML=`${summary}<span class="text-amber-300 font-bold">10 cards complete — quiz required.</span><button onclick="startPendingSetQuiz()" class="mt-2 bg-violet-600 hover:bg-violet-500 text-white text-[10px] font-black px-3 py-1.5 rounded-lg"><i class="fa-solid fa-brain mr-1"></i>Start Set ${pending} Quiz</button>`;
-      else { const remaining=10-setProgress; status.innerHTML=summary+(badges.length?`<span class="text-slate-400">${remaining} more cards for the next badge.</span>`:`${remaining} more cards to reach the comprehension quiz.`); }
+      status.innerHTML=summary+(read>=total
+        ? '<span class="text-amber-300 font-bold">Reading complete — unit quiz starting.</span>'
+        : `<span class="text-slate-400">Read ${total-read} more sentence card${total-read===1?"":"s"}, then pass the unit quiz to earn the badge.</span>`);
     }
     function awardCurrentCardCompletion() {
-      const key=getPupilBadgeKey(), cardId=getCurrentCardId();
-      if(!key||!cardId)return {count:0,quizRequired:false,quizSet:0};
-      const completed=getCompletedCardIds(); if(!completed.includes(cardId))completed.push(cardId);
-      localStorage.setItem(key,JSON.stringify(completed));
-      const pending=getPendingQuizSet(); updateBadgePanel();
-      return {count:completed.length,quizRequired:Boolean(pending),quizSet:pending};
+      const cardId=getCurrentCardId();
+      if(!studentName||!cardId)return {quizRequired:false,quizSet:0};
+      updateBadgePanel();
+      return {quizRequired:true,quizSet:getEarnedTopicBadges().length+1,cardId};
     }
     function getQuizSourceItems() {
       const source=Array.isArray(rawDataset)&&rawDataset.length?rawDataset:fallbackDataset;
@@ -1096,10 +1093,11 @@
       const map={"shopping mall":"a large place with many shops","sports centre":"a place for sport and exercise","write an email":"type and send a digital message","tidy my room":"make my room clean and neat","thunderstorm":"a storm with thunder, lightning and rain","blizzard":"a severe snowstorm with strong wind","geography class":"a lesson about places and the Earth","strict rules":"rules that must be followed carefully","healthy breakfast":"a nutritious morning meal","vegetables and fruit":"healthy foods that grow from plants","gymnastics competition":"an event where gymnasts perform and compete","champion athlete":"a sportsperson who has won a competition","appearance and height":"how someone looks and how tall they are","honest person":"someone who tells the truth","mountain hiking":"walking on trails in the mountains","souvenir shop":"a shop that sells items to remember a place"};
       return map[String(target||"").toLocaleLowerCase()]||"";
     }
-    function buildSetQuizQuestions(useAllCards = false) {
+    function buildSetQuizQuestions(useAllCards = false, sourceItem = null) {
       const fullSource=Array.isArray(rawDataset)&&rawDataset.length?rawDataset:fallbackDataset;
       const items=useAllCards?fullSource:getQuizSourceItems(), pick=i=>items[Math.min(i,items.length-1)]||fallbackDataset[0];
-      const main=pick(0), detail=pick(Math.floor(items.length/3)), order=pick(Math.floor(items.length*2/3)), vocab=pick(items.length-1), response=pick(Math.max(0,items.length-2));
+      const primary=sourceItem||pick(0);
+      const main=primary, detail=primary, order=primary, vocab=primary, response=primary;
       const all=items.flatMap(passageSentencesFor), ds=passageSentencesFor(detail), os=passageSentencesFor(order);
       const detailAnswer=ds[1]||ds[0]||itemTarget(detail), orderAnswer=os[0]||itemTarget(order), target=itemTarget(vocab), meaning=targetMeaning(target);
       const meanings=["a large place with many shops","a place for sport and exercise","type and send a digital message","make my room clean and neat","a storm with thunder, lightning and rain","a severe snowstorm with strong wind","someone who tells the truth","walking on trails in the mountains"];
@@ -1112,17 +1110,29 @@
         {type:"response",label:"Short response — teacher review",prompt:`In one clear sentence, explain the main idea of the “${itemTarget(response)}” text.`,hint:"Sentence starter: The text is mainly about..."}
       ];
     }
+    function resetQuizResultActions() {
+      const retry=document.getElementById("quizRetakeBtn"), proceed=document.getElementById("quizContinueBtn");
+      if(retry)retry.classList.remove("hidden");
+      if(proceed){proceed.innerHTML='<i class="fa-solid fa-check mr-1"></i>Continue Reading';proceed.setAttribute("onclick","closeSetQuizModal()");}
+    }
     function openSetQuiz(setNumber) {
-      if(!studentName)return;
-      activeQuiz={set:Number(setNumber)||getPendingQuizSet()||1,mode:"",questions:buildSetQuizQuestions(),hintsUsed:0,badge:getCurrentTopicBadge()};
-      document.getElementById("quizSetLabel").textContent=`Set ${activeQuiz.set} • 10-Card Checkpoint`;
+      if(!studentName||!currentList?.length)return;
+      const sourceItem=currentList[currentIndex], cardId=getCurrentCardId();
+      activeQuiz={set:Number(setNumber)||getEarnedTopicBadges().length+1,unitQuiz:true,cardId,sourceItem,mode:"independent",questions:buildSetQuizQuestions(false,sourceItem),hintsUsed:0,badge:getCurrentTopicBadge(),passed:null};
+      document.getElementById("quizSetLabel").textContent=`${itemUnit(sourceItem)} • Unit Comprehension Check`;
       const resultNote=document.getElementById("quizResultNote");
-      if(resultNote)resultNote.textContent="Your short answer is saved for teacher review. This is a readiness indicator, not an official TP decision.";
-      document.getElementById("quizModePanel").classList.remove("hidden"); document.getElementById("quizQuestionsPanel").classList.add("hidden"); document.getElementById("quizResultPanel").classList.add("hidden"); document.getElementById("quizValidationMessage").classList.add("hidden"); document.getElementById("setQuizModal").classList.remove("hidden");
+      if(resultNote)resultNote.textContent="Pass requirement: at least 3/4 auto-marked answers and a complete short response. This is not an official TP decision.";
+      resetQuizResultActions();
+      document.getElementById("quizModePanel").classList.add("hidden");
+      document.getElementById("quizResultPanel").classList.add("hidden");
+      document.getElementById("quizValidationMessage").classList.add("hidden");
+      document.getElementById("setQuizModal").classList.remove("hidden");
+      startQuizMode("independent");
     }
     function startPendingSetQuiz(){const set=getPendingQuizSet();if(set)openSetQuiz(set);}
     function openTeacherQuizPreview() {
       activeQuiz={set:1,preview:true,mode:"",questions:buildSetQuizQuestions(true),hintsUsed:0,badge:{icon:"🧠",label:"Teacher Preview",topic:"Comprehension"}};
+      resetQuizResultActions();
       document.getElementById("quizSetLabel").textContent="TEACHER PREVIEW • No pupil record will be changed";
       const note=document.getElementById("quizResultNote");
       if(note)note.textContent="Preview only — no mark, progress record or badge has been saved.";
@@ -1132,7 +1142,19 @@
       document.getElementById("quizValidationMessage").classList.add("hidden");
       document.getElementById("setQuizModal").classList.remove("hidden");
     }
-    function closeSetQuizModal(){document.getElementById("setQuizModal")?.classList.add("hidden");updateBadgePanel();}
+    function closeSetQuizModal(){
+      if(activeQuiz?.unitQuiz&&activeQuiz.passed===false){repeatUnitAfterQuiz();return;}
+      document.getElementById("setQuizModal")?.classList.add("hidden");updateBadgePanel();
+    }
+    function repeatUnitAfterQuiz() {
+      document.getElementById("setQuizModal")?.classList.add("hidden");
+      activeSentenceIndex=0;
+      renderSentenceView();
+      updateBadgePanel();
+      recordProgressToSheet("Quiz Not Passed - Repeat Unit");
+      const feedback=document.getElementById("feedbackBox");
+      if(feedback){feedback.className="min-h-[48px] bg-amber-950/80 border border-amber-500/50 rounded-2xl p-3 text-center text-xs font-semibold text-amber-200 flex items-center justify-center";feedback.innerHTML='<i class="fa-solid fa-rotate-right"></i> Read this unit again from Sentence 1, then retry the quiz.';}
+    }
     function startQuizMode(mode) {
       if(!activeQuiz)return; activeQuiz.mode=mode==="independent"?"independent":"supported";activeQuiz.hintsUsed=0;
       document.getElementById("quizModePanel").classList.add("hidden");document.getElementById("quizQuestionsPanel").classList.remove("hidden");document.getElementById("quizResultPanel").classList.add("hidden");
@@ -1152,20 +1174,30 @@
     }
     function listenToQuizQuestion(i){if(!activeQuiz||activeQuiz.mode!=="supported")return;window.speechSynthesis?.cancel();const u=new SpeechSynthesisUtterance(activeQuiz.questions[i]?.prompt||"");u.lang="en-GB";u.rate=.82;window.speechSynthesis?.speak(u);}
     function showQuizHint(i,button){if(!activeQuiz||activeQuiz.mode!=="supported")return;const hint=document.getElementById(`quiz-hint-${i}`);if(hint&&hint.classList.contains("hidden")){hint.classList.remove("hidden");activeQuiz.hintsUsed++;if(button)button.disabled=true;}}
-    function awardBadgeAfterQuiz(set) {
-      const key=getPupilTopicBadgeKey();if(!key)return null;const badges=getEarnedTopicBadges(), existing=badges.find(x=>Number(x.set)===Number(set));if(existing)return existing;
-      const theme=activeQuiz?.badge||getCurrentTopicBadge(), earned={set:Number(set),icon:theme.icon,topic:theme.topic,label:theme.label,earnedAt:new Date().toISOString(),requirement:"10 unique cards and comprehension quiz submitted"};
-      badges.push(earned);localStorage.setItem(key,JSON.stringify(badges));return earned;
+    function awardBadgeAfterQuiz() {
+      const badgeKey=getPupilTopicBadgeKey(), completedKey=getPupilBadgeKey();
+      if(!badgeKey||!completedKey)return null;
+      const cardId=activeQuiz?.cardId||getCurrentCardId(), completed=getCompletedCardIds();
+      if(cardId&&!completed.includes(cardId)){completed.push(cardId);localStorage.setItem(completedKey,JSON.stringify(completed));}
+      const badges=getEarnedTopicBadges(), theme=activeQuiz?.badge||getCurrentTopicBadge();
+      const existing=badges.find(x=>x.cardId===cardId||x.topic===theme.topic);
+      if(existing)return existing;
+      const earned={set:badges.length+1,cardId,icon:theme.icon,topic:theme.topic,label:theme.label,earnedAt:new Date().toISOString(),requirement:"10 sentence cards read and unit comprehension quiz passed"};
+      badges.push(earned);localStorage.setItem(badgeKey,JSON.stringify(badges));return earned;
     }
     function submitSetQuiz() {
-      if(!activeQuiz)return;const message=document.getElementById("quizValidationMessage");let score=0,missing=false;const answers=[];
-      activeQuiz.questions.slice(0,4).forEach((q,i)=>{const chosen=document.querySelector(`input[name="quiz-q-${i}"]:checked`), answer=chosen?.value||"";if(!chosen)missing=true;answers.push(answer);if(answer===q.answer)score++;});
-      const shortResponse=String(document.getElementById("quiz-short-response")?.value||"").trim();if(!shortResponse)missing=true;
-      if(missing){message.textContent="Please answer all five questions before submitting.";message.classList.remove("hidden");return;}message.classList.add("hidden");
-      const attempt=getQuizResults().filter(x=>Number(x.set)===Number(activeQuiz.set)).length+1, words=shortResponse.split(/\s+/).filter(Boolean).length;
-      let readiness="Developing understanding. Review the cards, use the support tools and try again.";
-      if(activeQuiz.mode==="supported"&&score>=3)readiness="Good supported understanding. Try Independent Mode next for stronger evidence.";
-      if(activeQuiz.mode==="independent"&&score>=3&&words>=5)readiness="Good independent comprehension evidence. Your teacher can review the short response.";
+      if(!activeQuiz)return;
+      const message=document.getElementById("quizValidationMessage");
+      let score=0,missing=false;const answers=[];
+      activeQuiz.questions.slice(0,4).forEach((q,i)=>{const chosen=document.querySelector(`input[name="quiz-q-${i}"]:checked`),answer=chosen?.value||"";if(!chosen)missing=true;answers.push(answer);if(answer===q.answer)score++;});
+      const shortResponse=String(document.getElementById("quiz-short-response")?.value||"").trim();
+      if(!shortResponse)missing=true;
+      if(missing){message.textContent="Please answer all five questions before submitting.";message.classList.remove("hidden");return;}
+      message.classList.add("hidden");
+      const words=shortResponse.split(/\s+/).filter(Boolean).length;
+      const attempts=getQuizResults().filter(x=>x.cardId===(activeQuiz.cardId||"")).length+1;
+      const passed=score>=3&&words>=5;
+      let readiness=passed?"Comprehension checkpoint passed. The short response remains available for teacher review.":"Not yet. Read the same unit again and retry the comprehension quiz.";
       if(activeQuiz.preview) {
         document.getElementById("quizQuestionsPanel").classList.add("hidden");
         document.getElementById("quizResultPanel").classList.remove("hidden");
@@ -1175,11 +1207,33 @@
         document.getElementById("quizReadinessMessage").textContent=`${readiness} Hints used: ${activeQuiz.hintsUsed}.`;
         return;
       }
-      saveQuizResult({set:activeQuiz.set,completedAt:new Date().toISOString(),mode:activeQuiz.mode,autoScore:score,autoTotal:4,shortResponse,shortResponseStatus:"Teacher review required",hintsUsed:activeQuiz.hintsUsed,attempt,readiness,answers});
-      const badge=awardBadgeAfterQuiz(activeQuiz.set);updateBadgePanel();playSuccessChime();
-      document.getElementById("quizQuestionsPanel").classList.add("hidden");document.getElementById("quizResultPanel").classList.remove("hidden");document.getElementById("quizResultBadge").textContent=badge?.icon||"🎖️";document.getElementById("quizResultTitle").textContent=`${badge?.label||"Reading"} Badge Unlocked!`;document.getElementById("quizResultScore").textContent=`Auto-marked score: ${score} / 4`;document.getElementById("quizReadinessMessage").textContent=`${readiness} Hints used: ${activeQuiz.hintsUsed}. Attempt: ${attempt}.`;
+      activeQuiz.passed=passed;
+      saveQuizResult({set:activeQuiz.set,cardId:activeQuiz.cardId,unit:itemUnit(activeQuiz.sourceItem),target:itemTarget(activeQuiz.sourceItem),completedAt:new Date().toISOString(),mode:"independent",autoScore:score,autoTotal:4,shortResponse,shortResponseStatus:"Teacher review required",hintsUsed:activeQuiz.hintsUsed,attempt:attempts,passed,readiness,answers});
+      document.getElementById("quizQuestionsPanel").classList.add("hidden");
+      document.getElementById("quizResultPanel").classList.remove("hidden");
+      const retry=document.getElementById("quizRetakeBtn"),proceed=document.getElementById("quizContinueBtn"),note=document.getElementById("quizResultNote");
+      if(retry)retry.classList.add("hidden");
+      if(passed) {
+        const badge=awardBadgeAfterQuiz();
+        recordProgressToSheet("Completed Unit and Quiz Passed");
+        updateBadgePanel();playSuccessChime();
+        document.getElementById("quizResultBadge").textContent=badge?.icon||"🎖️";
+        document.getElementById("quizResultTitle").textContent=`${badge?.label||"Reading"} Badge Unlocked!`;
+        document.getElementById("quizResultScore").textContent=`Passed: ${score} / 4`;
+        document.getElementById("quizReadinessMessage").textContent=readiness;
+        if(note)note.textContent="Badge earned after completing the 10 sentence cards and passing the unit quiz. Teacher validation is still required for official PBD.";
+        if(proceed){proceed.innerHTML='<i class="fa-solid fa-arrow-right mr-1"></i>Continue Reading';proceed.setAttribute("onclick","closeSetQuizModal()");}
+      } else {
+        playTryAgainSound();
+        document.getElementById("quizResultBadge").textContent="🔁";
+        document.getElementById("quizResultTitle").textContent="Read the Unit Again";
+        document.getElementById("quizResultScore").textContent=`Score: ${score} / 4 • Minimum: 3 / 4`;
+        document.getElementById("quizReadinessMessage").textContent=readiness;
+        if(note)note.textContent="No badge was awarded. Closing this window returns the pupil to Sentence 1 of the same unit.";
+        if(proceed){proceed.innerHTML='<i class="fa-solid fa-rotate-right mr-1"></i>Repeat This Unit';proceed.setAttribute("onclick","repeatUnitAfterQuiz()");}
+      }
     }
-    function retakeSetQuiz(){if(!activeQuiz)return;activeQuiz.questions=buildSetQuizQuestions(Boolean(activeQuiz.preview));document.getElementById("quizResultPanel").classList.add("hidden");document.getElementById("quizModePanel").classList.remove("hidden");document.getElementById("quizQuestionsPanel").classList.add("hidden");}
+    function retakeSetQuiz(){if(!activeQuiz)return;activeQuiz.questions=buildSetQuizQuestions(Boolean(activeQuiz.preview),activeQuiz.sourceItem||null);document.getElementById("quizResultPanel").classList.add("hidden");document.getElementById("quizModePanel").classList.remove("hidden");document.getElementById("quizQuestionsPanel").classList.add("hidden");}
 
     function playSuccessChime() {
       if (!successSoundEnabled) return;
@@ -1545,6 +1599,7 @@
 
         container.appendChild(div);
       });
+      updateBadgePanel();
     }
 
     function playWordAudio() {
@@ -1622,16 +1677,10 @@
           if (activeSentenceIndex >= currentSentences.length) {
             const award = awardCurrentCardCompletion();
             renderSentenceView();
-            playSuccessChime();
-            recordProgressToSheet("Completed All Sentences");
 
             feedback.className = "min-h-[48px] bg-emerald-950/90 border border-emerald-500/60 rounded-2xl p-3 text-center text-xs sm:text-sm font-bold text-emerald-200 flex items-center justify-center gap-2";
-            if (award.quizRequired) {
-              feedback.innerHTML = `🧠 <b>10-card set complete!</b> Finish the short comprehension quiz to unlock your badge.`;
-              setTimeout(() => openSetQuiz(award.quizSet), 650);
-            } else {
-              feedback.innerHTML = `🔔 <b>CHING!</b> Passage completed correctly. Press <b>Finish Reading & Reset</b>.`;
-            }
+            feedback.innerHTML = `🧠 <b>All 10 sentence cards completed!</b> Starting the unit comprehension quiz. Pass it to earn your badge.`;
+            if (award.quizRequired) setTimeout(() => openSetQuiz(award.quizSet), 650);
           } else {
             feedback.className = "min-h-[48px] bg-emerald-950/80 border border-emerald-500/50 rounded-2xl p-3 text-center text-xs sm:text-sm font-semibold text-emerald-200 flex items-center justify-center gap-2";
             feedback.innerHTML = `🌟 <b>Great reading!</b> Moving to Sentence ${activeSentenceIndex + 1}...`;
