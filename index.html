@@ -346,6 +346,20 @@
       </div>
       <div id="quizQuestionsPanel" class="hidden py-5">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-4"><span id="quizModeBadge" class="text-[11px] font-black px-3 py-1 rounded-full border"></span><span class="text-[11px] text-slate-400">Questions 1–4 are auto-marked • Question 5 needs teacher review</span></div>
+        <section id="quizPassageReview" class="hidden mb-5 bg-gradient-to-br from-sky-950/80 to-indigo-950/80 border border-sky-400/40 rounded-2xl p-4">
+          <div class="flex items-start gap-3 mb-3">
+            <div class="w-10 h-10 shrink-0 rounded-xl bg-sky-500/20 text-sky-200 flex items-center justify-center border border-sky-400/30"><i class="fa-solid fa-book-open-reader"></i></div>
+            <div>
+              <p class="text-[10px] uppercase tracking-widest font-black text-sky-300">Review the Passage</p>
+              <h3 id="quizPassageTitle" class="text-sm font-black text-white mt-0.5"></h3>
+              <p class="text-[10px] text-slate-400 mt-1">Read all the sentences again before answering.</p>
+            </div>
+          </div>
+          <div id="quizPassageSentences" class="space-y-2"></div>
+        </section>
+        <div id="quizFollowingQuestions" class="hidden mb-3 bg-violet-500/10 border border-violet-400/30 rounded-xl px-3 py-2 text-xs font-black text-violet-200">
+          <i class="fa-solid fa-circle-question text-amber-300 mr-1"></i> Now answer the following questions about the passage.
+        </div>
         <div id="quizQuestionList" class="space-y-4"></div>
         <p id="quizValidationMessage" class="hidden mt-4 text-xs font-bold text-rose-300 bg-rose-950/60 border border-rose-500/40 rounded-xl p-3"></p>
         <button onclick="submitSetQuiz()" class="w-full mt-5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white py-3 rounded-2xl font-black"><i class="fa-solid fa-paper-plane mr-2"></i>Submit My Answers</button>
@@ -1127,7 +1141,8 @@
     }
     function startPendingSetQuiz(){const set=getPendingQuizSet();if(set)openSetQuiz(set);}
     function openTeacherQuizPreview() {
-      activeQuiz={set:1,preview:true,mode:"",questions:buildSetQuizQuestions(true),hintsUsed:0,badge:{icon:"🧠",label:"Teacher Preview",topic:"Comprehension"}};
+      const previewSource=currentList?.[currentIndex]||rawDataset?.[0]||fallbackDataset[0];
+      activeQuiz={set:1,preview:true,sourceItem:previewSource,mode:"",questions:buildSetQuizQuestions(false,previewSource),hintsUsed:0,badge:{icon:"🧠",label:"Teacher Preview",topic:"Comprehension"}};
       resetQuizResultActions();
       document.getElementById("quizSetLabel").textContent="TEACHER PREVIEW • No pupil record will be changed";
       const note=document.getElementById("quizResultNote");
@@ -1155,7 +1170,27 @@
       if(!activeQuiz)return; activeQuiz.mode=mode==="independent"?"independent":"supported";activeQuiz.hintsUsed=0;
       document.getElementById("quizModePanel").classList.add("hidden");document.getElementById("quizQuestionsPanel").classList.remove("hidden");document.getElementById("quizResultPanel").classList.add("hidden");
       const badge=document.getElementById("quizModeBadge");badge.textContent=activeQuiz.mode==="supported"?"SUPPORTED MODE":"INDEPENDENT MODE";badge.className=activeQuiz.mode==="supported"?"text-[11px] font-black px-3 py-1 rounded-full border bg-indigo-500/20 text-indigo-200 border-indigo-400/40":"text-[11px] font-black px-3 py-1 rounded-full border bg-emerald-500/20 text-emerald-200 border-emerald-400/40";
+      renderQuizPassageReview();
       renderQuizQuestions();
+      const modalContent=document.querySelector("#setQuizModal > div");
+      if(modalContent)modalContent.scrollTop=0;
+    }
+    function renderQuizPassageReview() {
+      const review=document.getElementById("quizPassageReview"),following=document.getElementById("quizFollowingQuestions"),title=document.getElementById("quizPassageTitle"),container=document.getElementById("quizPassageSentences");
+      if(!review||!following||!title||!container)return;
+      const source=activeQuiz?.sourceItem;
+      const shouldShow=activeQuiz?.mode==="independent"&&source;
+      review.classList.toggle("hidden",!shouldShow);
+      following.classList.toggle("hidden",!shouldShow);
+      if(!shouldShow){container.innerHTML="";return;}
+      title.textContent=`${itemUnit(source)} • ${itemTarget(source)}`;
+      container.innerHTML="";
+      passageSentencesFor(source).forEach((sentence,index)=>{
+        const row=document.createElement("div");row.className="flex items-start gap-2 bg-slate-950/50 border border-sky-500/20 rounded-xl px-3 py-2";
+        const number=document.createElement("span");number.className="w-6 h-6 shrink-0 rounded-full bg-sky-500/20 text-sky-200 text-[10px] font-black flex items-center justify-center";number.textContent=String(index+1);
+        const text=document.createElement("p");text.className="text-xs sm:text-sm leading-relaxed text-slate-100";text.textContent=sentence;
+        row.append(number,text);container.appendChild(row);
+      });
     }
     function renderQuizQuestions() {
       const list=document.getElementById("quizQuestionList");if(!list||!activeQuiz)return;list.innerHTML="";
