@@ -635,7 +635,7 @@
     let currentIndex = 0;
     let currentSentences = [];
     let activeSentenceIndex = 0;
-    let studentName = localStorage.getItem("read_pod_student_name") || "";
+    let studentName = "";
     let analyticsLogs = []; // Stores live student records fetched from Google Sheets
     let registeredStudentMap = new Map();
     let registeredStudentProgressMap = new Map();
@@ -2095,16 +2095,23 @@
 
     // Initial page initialization
     window.onload = function() {
+      // Always begin with an empty pupil identity after a new landing or refresh.
+      studentName = "";
+      localStorage.removeItem("read_pod_student_name");
+      autoResumeHandled = false;
+
+      const nameInput = document.getElementById("studentNameInput");
+      const pupilSelect = document.getElementById("registeredStudentSelect");
+      if (nameInput) nameInput.value = "";
+      if (pupilSelect) pupilSelect.value = "";
+      renderSelectedPupilBadges("");
+
       applyTheme(localStorage.getItem("read_pod_theme") || "dark");
       updateSoundButton();
       fetchLiveData();
       populateRegisteredStudents();
-      const nameInput = document.getElementById('studentNameInput');
-      if (nameInput && studentName) {
-        nameInput.value = studentName;
-      }
       updateBadgePanel();
-      switchStudentTab('practice');
+      switchStudentTab("practice");
     };
   </script>
 </body>
