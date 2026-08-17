@@ -51,11 +51,21 @@
     }
 
     .read-aloud-ready {
-      animation: readyGlow 1.45s ease-in-out infinite alternate;
+      animation: readyGlow 0.9s ease-in-out infinite;
+      position: relative;
+      z-index: 1;
     }
     @keyframes readyGlow {
-      0% { transform: scale(1); box-shadow: 0 0 8px rgba(251, 113, 133, 0.45); }
-      100% { transform: scale(1.035); box-shadow: 0 0 28px rgba(251, 191, 36, 0.9); }
+      0%, 100% {
+        transform: scale(1);
+        filter: brightness(1);
+        box-shadow: 0 0 10px rgba(244, 63, 94, 0.65), 0 0 0 0 rgba(251, 191, 36, 0.55);
+      }
+      50% {
+        transform: scale(1.065);
+        filter: brightness(1.2);
+        box-shadow: 0 0 32px rgba(251, 191, 36, 1), 0 0 0 8px rgba(251, 191, 36, 0.12);
+      }
     }
     @media (prefers-reduced-motion: reduce) {
       .read-aloud-ready, .pulse-mic { animation: none !important; }
@@ -263,7 +273,7 @@
 
       <!-- Active Sentence Display Box -->
       <div id="activeSentenceBox" class="bg-indigo-950/90 border-2 border-indigo-500/70 active-sentence-glow rounded-2xl p-4 text-center min-h-[90px] flex flex-col justify-center items-center gap-2 transition-all">
-        <span class="text-[10px] uppercase font-extrabold text-amber-400 tracking-wider">Active Target Sentence</span>
+        <span class="text-[10px] uppercase font-extrabold text-amber-400 tracking-wider">READ CLEARLY THIS SENTENCE</span>
         <p id="activeSentenceText" class="text-base sm:text-lg font-bold text-white leading-relaxed">
           There is a big shopping mall near my house.
         </p>
@@ -951,6 +961,44 @@
       }
     }
 
+    function getPupilTopicBadgeKey() {
+      const identity = String(studentName || '').trim().toLocaleLowerCase();
+      return identity ? "read_pod_topic_badges_" + encodeURIComponent(identity) : "";
+    }
+
+    function getEarnedTopicBadges() {
+      const key = getPupilTopicBadgeKey();
+      if (!key) return [];
+      try {
+        const stored = JSON.parse(localStorage.getItem(key) || "[]");
+        return Array.isArray(stored) ? stored : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function getCurrentTopicBadge() {
+      if (!currentList || currentList.length === 0) {
+        return { icon: "🎖️", topic: "Reading", label: "Reading Explorer" };
+      }
+
+      const item = currentList[currentIndex] || {};
+      const topicText = String(item.Unit_Topic || item.unit || item.Target_Word_Phrase || item.target || '').toLocaleLowerCase();
+      const badgeThemes = [
+        { keywords: ['town', 'city', 'shopping'], icon: '🏙️', topic: 'Towns & Cities', label: 'City Reader' },
+        { keywords: ['day', 'routine', 'email', 'tidy'], icon: '⏰', topic: 'Days & Routines', label: 'Routine Reader' },
+        { keywords: ['weather', 'storm', 'blizzard', 'thunder'], icon: '⛈️', topic: 'Wild Weather', label: 'Weather Reader' },
+        { keywords: ['learning', 'class', 'school', 'geography'], icon: '📚', topic: 'Learning World', label: 'Learning Explorer' },
+        { keywords: ['food', 'health', 'breakfast', 'vegetable', 'fruit'], icon: '🍎', topic: 'Food & Health', label: 'Healthy Reader' },
+        { keywords: ['sport', 'gymnastics', 'athlete'], icon: '🏆', topic: 'Sport & Leisure', label: 'Sport Reader' },
+        { keywords: ['growing', 'appearance', 'height', 'honest'], icon: '🌱', topic: 'Growing Up', label: 'Growing Reader' },
+        { keywords: ['away', 'hiking', 'mountain', 'souvenir', 'travel'], icon: '✈️', topic: 'Going Away', label: 'Travel Reader' }
+      ];
+
+      return badgeThemes.find(theme => theme.keywords.some(keyword => topicText.includes(keyword)))
+        || { icon: "🎖️", topic: "Reading", label: "Reading Explorer" };
+    }
+
     function updateBadgePanel() {
       const status = document.getElementById('badgeStatusText');
       const progress = document.getElementById('badgeProgressText');
@@ -963,26 +1011,54 @@
       }
 
       const count = getCompletedCardIds().length;
-      progress.textContent = `${Math.min(count, 10)} / 10`;
-      status.innerHTML = count >= 10
-        ? '<span class="text-amber-300 font-extrabold">🏅 READ-POD Champion</span> — reward for completing 10 practice cards.'
-        : `${10 - count} more cards to earn <b>READ-POD Champion</b>.`;
+      const badges = getEarnedTopicBadges();
+      const setProgress = count > 0 && count % 10 === 0 ? 10 : count % 10;
+      progress.textContent = `${setProgress} / 10`;
+
+      if (badges.length > 0) {
+        const badgeSummary = badges.map(badge => `${badge.icon} <b>${badge.label}</b>`).join(' • ');
+        const nextMessage = setProgress === 10
+          ? 'Set completed!'
+          : `${10 - setProgress} more cards for the next badge.`;
+        status.innerHTML = `${badgeSummary}<br><span class="text-slate-400">${nextMessage}</span>`;
+      } else {
+        status.innerHTML = `${10 - setProgress} more cards to earn a topic badge.`;
+      }
     }
 
     function awardCurrentCardCompletion() {
       const key = getPupilBadgeKey();
       const cardId = getCurrentCardId();
-      if (!key || !cardId) return { count: 0, badgeEarned: false };
+      if (!key || !cardId) return { count: 0, badgeEarned: false, badge: null };
 
       const completed = getCompletedCardIds();
       const previousCount = completed.length;
-      if (!completed.includes(cardId)) completed.push(cardId);
+      const isNewCard = !completed.includes(cardId);
+      if (isNewCard) completed.push(cardId);
       localStorage.setItem(key, JSON.stringify(completed));
-      updateBadgePanel();
 
+      let earnedBadge = null;
+      const previousSets = Math.floor(previousCount / 10);
+      const completedSets = Math.floor(completed.length / 10);
+      if (isNewCard && completedSets > previousSets) {
+        const badges = getEarnedTopicBadges();
+        const theme = getCurrentTopicBadge();
+        earnedBadge = {
+          set: completedSets,
+          icon: theme.icon,
+          topic: theme.topic,
+          label: theme.label,
+          earnedAt: new Date().toISOString()
+        };
+        badges.push(earnedBadge);
+        localStorage.setItem(getPupilTopicBadgeKey(), JSON.stringify(badges));
+      }
+
+      updateBadgePanel();
       return {
         count: completed.length,
-        badgeEarned: previousCount < 10 && completed.length >= 10
+        badgeEarned: Boolean(earnedBadge),
+        badge: earnedBadge
       };
     }
 
@@ -1019,28 +1095,34 @@
         if (!AudioCtx) return;
         const audioCtx = new AudioCtx();
         const now = audioCtx.currentTime;
-        const notes = [
-          { frequency: 392.00, start: 0.00, duration: 0.09 },
-          { frequency: 293.66, start: 0.075, duration: 0.13 }
-        ];
 
-        notes.forEach(({ frequency, start, duration }) => {
-          const oscillator = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          oscillator.type = "triangle";
-          oscillator.frequency.setValueAtTime(frequency, now + start);
-          gain.gain.setValueAtTime(0.0001, now + start);
-          gain.gain.exponentialRampToValueAtTime(0.26, now + start + 0.015);
-          gain.gain.exponentialRampToValueAtTime(0.0001, now + start + duration);
-          oscillator.connect(gain);
-          gain.connect(audioCtx.destination);
-          oscillator.start(now + start);
-          oscillator.stop(now + start + duration);
-        });
+        const thump = audioCtx.createOscillator();
+        const thumpGain = audioCtx.createGain();
+        thump.type = "sine";
+        thump.frequency.setValueAtTime(190, now);
+        thump.frequency.exponentialRampToValueAtTime(58, now + 0.14);
+        thumpGain.gain.setValueAtTime(0.34, now);
+        thumpGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+        thump.connect(thumpGain);
+        thumpGain.connect(audioCtx.destination);
+        thump.start(now);
+        thump.stop(now + 0.17);
 
-        setTimeout(() => audioCtx.close(), 350);
+        const click = audioCtx.createOscillator();
+        const clickGain = audioCtx.createGain();
+        click.type = "square";
+        click.frequency.setValueAtTime(520, now);
+        click.frequency.exponentialRampToValueAtTime(150, now + 0.045);
+        clickGain.gain.setValueAtTime(0.12, now);
+        clickGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.055);
+        click.connect(clickGain);
+        clickGain.connect(audioCtx.destination);
+        click.start(now);
+        click.stop(now + 0.06);
+
+        setTimeout(() => audioCtx.close(), 300);
       } catch (error) {
-        console.warn("Try-again sound could not be played:", error);
+        console.warn("KLUP sound could not be played:", error);
       }
     }
 
@@ -1391,8 +1473,8 @@
             recordProgressToSheet("Completed All Sentences");
 
             feedback.className = "min-h-[48px] bg-emerald-950/90 border border-emerald-500/60 rounded-2xl p-3 text-center text-xs sm:text-sm font-bold text-emerald-200 flex items-center justify-center gap-2";
-            feedback.innerHTML = award.badgeEarned
-              ? `🏅 <b>READ-POD Champion unlocked!</b> You completed 10 unique cards. Press <b>Finish Reading & Reset</b>.`
+            feedback.innerHTML = award.badgeEarned && award.badge
+              ? `${award.badge.icon} <b>${award.badge.label} badge unlocked!</b> You completed a set of 10 unique cards. Press <b>Finish Reading & Reset</b>.`
               : `✨ <b>Ching ching!</b> Passage completed correctly. Press <b>Finish Reading & Reset</b>.`;
           } else {
             feedback.className = "min-h-[48px] bg-emerald-950/80 border border-emerald-500/50 rounded-2xl p-3 text-center text-xs sm:text-sm font-semibold text-emerald-200 flex items-center justify-center gap-2";
@@ -1403,7 +1485,7 @@
         } else {
           playTryAgainSound();
           feedback.className = "min-h-[48px] bg-rose-950/80 border border-rose-500/50 rounded-2xl p-3 text-center text-xs font-semibold text-rose-200 flex items-center justify-center gap-1";
-          feedback.innerHTML = `🙂 You said: "<b>${spokenText}</b>". Try reading again!`;
+          feedback.innerHTML = `🔊 <b>KLUP!</b> You said: "<b>${spokenText}</b>". Try reading again!`;
         }
       };
 
