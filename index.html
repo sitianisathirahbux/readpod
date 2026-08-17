@@ -685,6 +685,7 @@
         rows.forEach((row, rowIndex) => {
           const rawName = String(row.studentName || '').trim();
           if (!rawName || ["Murid Tanpa Nama", "Unnamed Pupil"].includes(rawName)) return;
+          if (["anis", "siti"].includes(rawName.toLocaleLowerCase())) return;
           const key = rawName.toLocaleLowerCase();
           if (!uniqueNames.has(key)) uniqueNames.set(key, rawName);
 
