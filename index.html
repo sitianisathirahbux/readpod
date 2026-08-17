@@ -325,6 +325,38 @@
 
   </main>
 
+
+  <!-- 10-CARD COMPREHENSION CHECK -->
+  <div id="setQuizModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[70] hidden flex items-center justify-center p-3 sm:p-5">
+    <div class="bg-slate-900 border border-violet-400/50 w-full max-w-3xl max-h-[94vh] overflow-y-auto rounded-3xl p-5 sm:p-7 shadow-2xl relative">
+      <button onclick="closeSetQuizModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg" aria-label="Close quiz"><i class="fa-solid fa-xmark"></i></button>
+      <div class="flex items-center gap-3 border-b border-slate-800 pb-4 pr-8">
+        <div class="w-12 h-12 rounded-2xl bg-violet-500/20 text-amber-300 flex items-center justify-center text-2xl border border-violet-400/30">🧠</div>
+        <div><p id="quizSetLabel" class="text-[10px] uppercase tracking-widest font-black text-violet-300">10-Card Checkpoint</p><h2 class="text-lg sm:text-xl font-bold text-white">Quick Comprehension Quiz</h2><p class="text-xs text-slate-400">Complete the quiz to unlock your new topic badge.</p></div>
+      </div>
+      <div id="quizModePanel" class="py-5">
+        <p class="text-sm font-bold text-white mb-3">Choose how you want to answer:</p>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <button onclick="startQuizMode('supported')" class="text-left bg-indigo-950/70 hover:bg-indigo-900/80 border border-indigo-400/40 rounded-2xl p-4"><span class="block text-indigo-200 font-black"><i class="fa-solid fa-hands-helping mr-2"></i>Supported Mode</span><span class="block text-xs text-slate-300 mt-1">3 choices, listen button, hints and a sentence starter.</span></button>
+          <button onclick="startQuizMode('independent')" class="text-left bg-emerald-950/60 hover:bg-emerald-900/70 border border-emerald-400/40 rounded-2xl p-4"><span class="block text-emerald-200 font-black"><i class="fa-solid fa-person-running mr-2"></i>Independent Mode</span><span class="block text-xs text-slate-300 mt-1">Up to 4 choices and no hints.</span></button>
+        </div>
+        <p class="text-[11px] text-amber-200/90 mt-4 bg-amber-950/40 border border-amber-500/30 rounded-xl p-3"><i class="fa-solid fa-circle-info mr-1"></i>This quiz provides comprehension evidence only. It does not automatically assign an official PBD Mastery Level.</p>
+      </div>
+      <div id="quizQuestionsPanel" class="hidden py-5">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4"><span id="quizModeBadge" class="text-[11px] font-black px-3 py-1 rounded-full border"></span><span class="text-[11px] text-slate-400">Questions 1–4 are auto-marked • Question 5 needs teacher review</span></div>
+        <div id="quizQuestionList" class="space-y-4"></div>
+        <p id="quizValidationMessage" class="hidden mt-4 text-xs font-bold text-rose-300 bg-rose-950/60 border border-rose-500/40 rounded-xl p-3"></p>
+        <button onclick="submitSetQuiz()" class="w-full mt-5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white py-3 rounded-2xl font-black"><i class="fa-solid fa-paper-plane mr-2"></i>Submit My Answers</button>
+      </div>
+      <div id="quizResultPanel" class="hidden py-6 text-center">
+        <div id="quizResultBadge" class="text-6xl mb-3">🎖️</div><h3 id="quizResultTitle" class="text-xl font-black text-white">Badge Unlocked!</h3><p id="quizResultScore" class="text-lg font-black text-amber-300 mt-2"></p>
+        <p id="quizReadinessMessage" class="text-sm text-slate-200 mt-3 bg-slate-950/60 border border-slate-700 rounded-2xl p-4"></p>
+        <p class="text-[11px] text-slate-400 mt-3">Your short answer is saved for teacher review. This is a readiness indicator, not an official TP decision.</p>
+        <div class="flex flex-col sm:flex-row justify-center gap-3 mt-5"><button onclick="retakeSetQuiz()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold border border-slate-600"><i class="fa-solid fa-rotate-right mr-1"></i>Try Again</button><button onclick="closeSetQuizModal()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold"><i class="fa-solid fa-check mr-1"></i>Continue Reading</button></div>
+      </div>
+    </div>
+  </div>
+
   <!-- STREAMING_CHUNK:Building Admin Login Authentication Modal Window -->
   <!-- ADMIN LOGIN MODAL -->
   <div id="adminLoginModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
@@ -593,6 +625,7 @@
     let tpChartInstance = null;
     let statusChartInstance = null;
     let successSoundEnabled = localStorage.getItem("read_pod_sound_enabled") !== "false";
+    let activeQuiz = null;
 
     function saveStudentName(val) {
       studentName = val.trim();
@@ -999,68 +1032,128 @@
         || { icon: "🎖️", topic: "Reading", label: "Reading Explorer" };
     }
 
+    function getCardIdForItem(item) {
+      return [item?.Unit_Topic || item?.unit || "", item?.Target_Word_Phrase || item?.target || "", item?.TP_Level || item?.level || ""].map(value => String(value).trim().toLocaleLowerCase()).join("|");
+    }
+    function getPupilQuizKey() {
+      const identity=String(studentName||"").trim().toLocaleLowerCase();
+      return identity ? "read_pod_quiz_results_"+encodeURIComponent(identity) : "";
+    }
+    function getQuizResults() {
+      const key=getPupilQuizKey(); if(!key)return [];
+      try { const value=JSON.parse(localStorage.getItem(key)||"[]"); return Array.isArray(value)?value:[]; } catch { return []; }
+    }
+    function saveQuizResult(result) {
+      const key=getPupilQuizKey(); if(!key)return;
+      const results=getQuizResults(); results.push(result); localStorage.setItem(key,JSON.stringify(results));
+    }
+    function getPendingQuizSet() {
+      const total=Math.floor(getCompletedCardIds().length/10);
+      const quizzes=new Set(getQuizResults().map(x=>Number(x.set)));
+      const badges=new Set(getEarnedTopicBadges().map(x=>Number(x.set)));
+      for(let set=1;set<=total;set++) if(!quizzes.has(set)&&!badges.has(set)) return set;
+      return 0;
+    }
     function updateBadgePanel() {
-      const status = document.getElementById('badgeStatusText');
-      const progress = document.getElementById('badgeProgressText');
-      if (!status || !progress) return;
-
-      if (!studentName) {
-        status.innerHTML = "Select a pupil to record badge progress.";
-        progress.textContent = "0 / 10";
-        return;
-      }
-
-      const count = getCompletedCardIds().length;
-      const badges = getEarnedTopicBadges();
-      const setProgress = count > 0 && count % 10 === 0 ? 10 : count % 10;
-      progress.textContent = `${setProgress} / 10`;
-
-      if (badges.length > 0) {
-        const badgeSummary = badges.map(badge => `${badge.icon} <b>${badge.label}</b>`).join(' • ');
-        const nextMessage = setProgress === 10
-          ? 'Set completed!'
-          : `${10 - setProgress} more cards for the next badge.`;
-        status.innerHTML = `${badgeSummary}<br><span class="text-slate-400">${nextMessage}</span>`;
-      } else {
-        status.innerHTML = `${10 - setProgress} more cards to earn a topic badge.`;
-      }
+      const status=document.getElementById("badgeStatusText"), progress=document.getElementById("badgeProgressText");
+      if(!status||!progress)return;
+      if(!studentName){status.innerHTML="Select a pupil to record badge progress.";progress.textContent="0 / 10";return;}
+      const count=getCompletedCardIds().length, badges=getEarnedTopicBadges(), pending=getPendingQuizSet();
+      const setProgress=pending?10:count%10; progress.textContent=`${setProgress} / 10`;
+      const summary=badges.length?badges.map(x=>`${x.icon} <b>${x.label}</b>`).join(" • ")+"<br>":"";
+      if(pending) status.innerHTML=`${summary}<span class="text-amber-300 font-bold">10 cards complete — quiz required.</span><button onclick="startPendingSetQuiz()" class="mt-2 bg-violet-600 hover:bg-violet-500 text-white text-[10px] font-black px-3 py-1.5 rounded-lg"><i class="fa-solid fa-brain mr-1"></i>Start Set ${pending} Quiz</button>`;
+      else { const remaining=10-setProgress; status.innerHTML=summary+(badges.length?`<span class="text-slate-400">${remaining} more cards for the next badge.</span>`:`${remaining} more cards to reach the comprehension quiz.`); }
     }
-
     function awardCurrentCardCompletion() {
-      const key = getPupilBadgeKey();
-      const cardId = getCurrentCardId();
-      if (!key || !cardId) return { count: 0, badgeEarned: false, badge: null };
-
-      const completed = getCompletedCardIds();
-      const previousCount = completed.length;
-      const isNewCard = !completed.includes(cardId);
-      if (isNewCard) completed.push(cardId);
-      localStorage.setItem(key, JSON.stringify(completed));
-
-      let earnedBadge = null;
-      const previousSets = Math.floor(previousCount / 10);
-      const completedSets = Math.floor(completed.length / 10);
-      if (isNewCard && completedSets > previousSets) {
-        const badges = getEarnedTopicBadges();
-        const theme = getCurrentTopicBadge();
-        earnedBadge = {
-          set: completedSets,
-          icon: theme.icon,
-          topic: theme.topic,
-          label: theme.label,
-          earnedAt: new Date().toISOString()
-        };
-        badges.push(earnedBadge);
-        localStorage.setItem(getPupilTopicBadgeKey(), JSON.stringify(badges));
-      }
-
-      updateBadgePanel();
-      return {
-        count: completed.length,
-        badgeEarned: Boolean(earnedBadge),
-        badge: earnedBadge
-      };
+      const key=getPupilBadgeKey(), cardId=getCurrentCardId();
+      if(!key||!cardId)return {count:0,quizRequired:false,quizSet:0};
+      const completed=getCompletedCardIds(); if(!completed.includes(cardId))completed.push(cardId);
+      localStorage.setItem(key,JSON.stringify(completed));
+      const pending=getPendingQuizSet(); updateBadgePanel();
+      return {count:completed.length,quizRequired:Boolean(pending),quizSet:pending};
     }
+    function getQuizSourceItems() {
+      const source=Array.isArray(rawDataset)&&rawDataset.length?rawDataset:fallbackDataset;
+      const matched=getCompletedCardIds().map(id=>source.find(item=>getCardIdForItem(item)===id)).filter(Boolean);
+      return matched.length?matched:source;
+    }
+    function passageSentencesFor(item) {
+      const text=item?.Comprehension_Passage||item?.passage||item?.Sample_Sentence||item?.sentence||"";
+      return String(text).split(/(?<=[.!?])\s+/).map(x=>x.trim()).filter(Boolean);
+    }
+    function itemTarget(item){return String(item?.Target_Word_Phrase||item?.target||"this text").trim();}
+    function itemUnit(item){return String(item?.Unit_Topic||item?.unit||"Reading").trim();}
+    function shuffled(values){return [...values].sort(()=>Math.random()-.5);}
+    function makeChoices(correct,candidates,limit=4) {
+      const choices=[correct,...candidates].map(x=>String(x||"").trim()).filter(Boolean).filter((x,i,a)=>a.indexOf(x)===i);
+      ["A different place or activity","Something not stated in the text","None of these ideas"].forEach(x=>{if(choices.length<limit)choices.push(x)});
+      return shuffled([choices[0],...shuffled(choices.slice(1)).slice(0,limit-1)]);
+    }
+    function targetMeaning(target) {
+      const map={"shopping mall":"a large place with many shops","sports centre":"a place for sport and exercise","write an email":"type and send a digital message","tidy my room":"make my room clean and neat","thunderstorm":"a storm with thunder, lightning and rain","blizzard":"a severe snowstorm with strong wind","geography class":"a lesson about places and the Earth","strict rules":"rules that must be followed carefully","healthy breakfast":"a nutritious morning meal","vegetables and fruit":"healthy foods that grow from plants","gymnastics competition":"an event where gymnasts perform and compete","champion athlete":"a sportsperson who has won a competition","appearance and height":"how someone looks and how tall they are","honest person":"someone who tells the truth","mountain hiking":"walking on trails in the mountains","souvenir shop":"a shop that sells items to remember a place"};
+      return map[String(target||"").toLocaleLowerCase()]||"";
+    }
+    function buildSetQuizQuestions() {
+      const items=getQuizSourceItems(), pick=i=>items[Math.min(i,items.length-1)]||fallbackDataset[0];
+      const main=pick(0), detail=pick(Math.floor(items.length/3)), order=pick(Math.floor(items.length*2/3)), vocab=pick(items.length-1), response=pick(Math.max(0,items.length-2));
+      const all=items.flatMap(passageSentencesFor), ds=passageSentencesFor(detail), os=passageSentencesFor(order);
+      const detailAnswer=ds[1]||ds[0]||itemTarget(detail), orderAnswer=os[0]||itemTarget(order), target=itemTarget(vocab), meaning=targetMeaning(target);
+      const meanings=["a large place with many shops","a place for sport and exercise","type and send a digital message","make my room clean and neat","a storm with thunder, lightning and rain","a severe snowstorm with strong wind","someone who tells the truth","walking on trails in the mountains"];
+      const vocabQ=meaning?{prompt:`What does “${target}” mean in the text?`,answer:meaning,options:makeChoices(meaning,meanings.filter(x=>x!==meaning)),hint:"Read the sentence around the target phrase and use context clues."}:{prompt:"Which key word or phrase is the focus of this text?",answer:target,options:makeChoices(target,items.map(itemTarget).filter(x=>x!==target)),hint:"Look at the highlighted target phrase."};
+      return [
+        {type:"main",label:"Main idea",prompt:`What is the main topic of the text about “${itemTarget(main)}”?`,answer:itemUnit(main),options:makeChoices(itemUnit(main),items.map(itemUnit).filter(x=>x!==itemUnit(main))),hint:"Look at the unit title and repeated words."},
+        {type:"detail",label:"Specific information",prompt:`Which detail appears in the “${itemTarget(detail)}” text?`,answer:detailAnswer,options:makeChoices(detailAnswer,all.filter(x=>x!==detailAnswer)),hint:"Think about the middle sentence of the passage."},
+        {type:"sequence",label:"Text detail",prompt:`Which sentence comes first in the “${itemTarget(order)}” text?`,answer:orderAnswer,options:makeChoices(orderAnswer,[...os.slice(1),...all.filter(x=>!os.includes(x))]),hint:"Remember how the passage begins."},
+        {type:"vocabulary",label:"Vocabulary in context",...vocabQ},
+        {type:"response",label:"Short response — teacher review",prompt:`In one clear sentence, explain the main idea of the “${itemTarget(response)}” text.`,hint:"Sentence starter: The text is mainly about..."}
+      ];
+    }
+    function openSetQuiz(setNumber) {
+      if(!studentName)return;
+      activeQuiz={set:Number(setNumber)||getPendingQuizSet()||1,mode:"",questions:buildSetQuizQuestions(),hintsUsed:0,badge:getCurrentTopicBadge()};
+      document.getElementById("quizSetLabel").textContent=`Set ${activeQuiz.set} • 10-Card Checkpoint`;
+      document.getElementById("quizModePanel").classList.remove("hidden"); document.getElementById("quizQuestionsPanel").classList.add("hidden"); document.getElementById("quizResultPanel").classList.add("hidden"); document.getElementById("quizValidationMessage").classList.add("hidden"); document.getElementById("setQuizModal").classList.remove("hidden");
+    }
+    function startPendingSetQuiz(){const set=getPendingQuizSet();if(set)openSetQuiz(set);}
+    function closeSetQuizModal(){document.getElementById("setQuizModal")?.classList.add("hidden");updateBadgePanel();}
+    function startQuizMode(mode) {
+      if(!activeQuiz)return; activeQuiz.mode=mode==="independent"?"independent":"supported";activeQuiz.hintsUsed=0;
+      document.getElementById("quizModePanel").classList.add("hidden");document.getElementById("quizQuestionsPanel").classList.remove("hidden");document.getElementById("quizResultPanel").classList.add("hidden");
+      const badge=document.getElementById("quizModeBadge");badge.textContent=activeQuiz.mode==="supported"?"SUPPORTED MODE":"INDEPENDENT MODE";badge.className=activeQuiz.mode==="supported"?"text-[11px] font-black px-3 py-1 rounded-full border bg-indigo-500/20 text-indigo-200 border-indigo-400/40":"text-[11px] font-black px-3 py-1 rounded-full border bg-emerald-500/20 text-emerald-200 border-emerald-400/40";
+      renderQuizQuestions();
+    }
+    function renderQuizQuestions() {
+      const list=document.getElementById("quizQuestionList");if(!list||!activeQuiz)return;list.innerHTML="";
+      activeQuiz.questions.forEach((q,i)=>{
+        const card=document.createElement("div");card.className="bg-slate-950/60 border border-slate-700 rounded-2xl p-4";
+        const head=document.createElement("div");head.innerHTML=`<p class="text-[10px] uppercase tracking-wider font-black text-violet-300">Question ${i+1} • ${q.label}</p><p class="quiz-prompt text-sm font-bold text-white mt-1"></p>`;head.querySelector(".quiz-prompt").textContent=q.prompt;card.appendChild(head);
+        if(activeQuiz.mode==="supported"){const tools=document.createElement("div");tools.className="flex gap-2 mt-3";tools.innerHTML=`<button type="button" onclick="listenToQuizQuestion(${i})" class="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-sky-500/15 text-sky-200 border border-sky-400/30"><i class="fa-solid fa-volume-high mr-1"></i>Listen</button><button type="button" onclick="showQuizHint(${i},this)" class="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-amber-500/15 text-amber-200 border border-amber-400/30"><i class="fa-solid fa-lightbulb mr-1"></i>Hint</button>`;card.appendChild(tools);const hint=document.createElement("p");hint.id=`quiz-hint-${i}`;hint.className="hidden text-[11px] text-amber-100 mt-2 bg-amber-950/40 border border-amber-500/20 rounded-lg p-2";hint.textContent=q.hint;card.appendChild(hint);}
+        if(q.type==="response"){const area=document.createElement("textarea");area.id="quiz-short-response";area.rows=3;area.placeholder=activeQuiz.mode==="supported"?"The text is mainly about...":"Write one complete sentence.";area.className="w-full mt-3 bg-slate-900 text-white text-sm border border-slate-600 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-violet-400";card.appendChild(area);}
+        else {const wrap=document.createElement("div");wrap.className="grid gap-2 mt-3";const limit=activeQuiz.mode==="supported"?3:4, wrong=q.options.filter(x=>x!==q.answer), visible=shuffled([q.answer,...shuffled(wrong).slice(0,limit-1)]);visible.forEach(option=>{const label=document.createElement("label");label.className="flex items-start gap-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs text-slate-200 cursor-pointer";const radio=document.createElement("input");radio.type="radio";radio.name=`quiz-q-${i}`;radio.value=option;radio.className="mt-0.5 accent-violet-500";const span=document.createElement("span");span.textContent=option;label.append(radio,span);wrap.appendChild(label)});card.appendChild(wrap);}
+        list.appendChild(card);
+      });
+    }
+    function listenToQuizQuestion(i){if(!activeQuiz||activeQuiz.mode!=="supported")return;window.speechSynthesis?.cancel();const u=new SpeechSynthesisUtterance(activeQuiz.questions[i]?.prompt||"");u.lang="en-GB";u.rate=.82;window.speechSynthesis?.speak(u);}
+    function showQuizHint(i,button){if(!activeQuiz||activeQuiz.mode!=="supported")return;const hint=document.getElementById(`quiz-hint-${i}`);if(hint&&hint.classList.contains("hidden")){hint.classList.remove("hidden");activeQuiz.hintsUsed++;if(button)button.disabled=true;}}
+    function awardBadgeAfterQuiz(set) {
+      const key=getPupilTopicBadgeKey();if(!key)return null;const badges=getEarnedTopicBadges(), existing=badges.find(x=>Number(x.set)===Number(set));if(existing)return existing;
+      const theme=activeQuiz?.badge||getCurrentTopicBadge(), earned={set:Number(set),icon:theme.icon,topic:theme.topic,label:theme.label,earnedAt:new Date().toISOString(),requirement:"10 unique cards and comprehension quiz submitted"};
+      badges.push(earned);localStorage.setItem(key,JSON.stringify(badges));return earned;
+    }
+    function submitSetQuiz() {
+      if(!activeQuiz)return;const message=document.getElementById("quizValidationMessage");let score=0,missing=false;const answers=[];
+      activeQuiz.questions.slice(0,4).forEach((q,i)=>{const chosen=document.querySelector(`input[name="quiz-q-${i}"]:checked`), answer=chosen?.value||"";if(!chosen)missing=true;answers.push(answer);if(answer===q.answer)score++;});
+      const shortResponse=String(document.getElementById("quiz-short-response")?.value||"").trim();if(!shortResponse)missing=true;
+      if(missing){message.textContent="Please answer all five questions before submitting.";message.classList.remove("hidden");return;}message.classList.add("hidden");
+      const attempt=getQuizResults().filter(x=>Number(x.set)===Number(activeQuiz.set)).length+1, words=shortResponse.split(/\s+/).filter(Boolean).length;
+      let readiness="Developing understanding. Review the cards, use the support tools and try again.";
+      if(activeQuiz.mode==="supported"&&score>=3)readiness="Good supported understanding. Try Independent Mode next for stronger evidence.";
+      if(activeQuiz.mode==="independent"&&score>=3&&words>=5)readiness="Good independent comprehension evidence. Your teacher can review the short response.";
+      saveQuizResult({set:activeQuiz.set,completedAt:new Date().toISOString(),mode:activeQuiz.mode,autoScore:score,autoTotal:4,shortResponse,shortResponseStatus:"Teacher review required",hintsUsed:activeQuiz.hintsUsed,attempt,readiness,answers});
+      const badge=awardBadgeAfterQuiz(activeQuiz.set);updateBadgePanel();playSuccessChime();
+      document.getElementById("quizQuestionsPanel").classList.add("hidden");document.getElementById("quizResultPanel").classList.remove("hidden");document.getElementById("quizResultBadge").textContent=badge?.icon||"🎖️";document.getElementById("quizResultTitle").textContent=`${badge?.label||"Reading"} Badge Unlocked!`;document.getElementById("quizResultScore").textContent=`Auto-marked score: ${score} / 4`;document.getElementById("quizReadinessMessage").textContent=`${readiness} Hints used: ${activeQuiz.hintsUsed}. Attempt: ${attempt}.`;
+    }
+    function retakeSetQuiz(){if(!activeQuiz)return;activeQuiz.questions=buildSetQuizQuestions();document.getElementById("quizResultPanel").classList.add("hidden");document.getElementById("quizModePanel").classList.remove("hidden");document.getElementById("quizQuestionsPanel").classList.add("hidden");}
 
     function playSuccessChime() {
       if (!successSoundEnabled) return;
@@ -1506,9 +1599,12 @@
             recordProgressToSheet("Completed All Sentences");
 
             feedback.className = "min-h-[48px] bg-emerald-950/90 border border-emerald-500/60 rounded-2xl p-3 text-center text-xs sm:text-sm font-bold text-emerald-200 flex items-center justify-center gap-2";
-            feedback.innerHTML = award.badgeEarned && award.badge
-              ? `${award.badge.icon} <b>${award.badge.label} badge unlocked!</b> You completed a set of 10 unique cards. Press <b>Finish Reading & Reset</b>.`
-              : `🔔 <b>CHING!</b> Passage completed correctly. Press <b>Finish Reading & Reset</b>.`;
+            if (award.quizRequired) {
+              feedback.innerHTML = `🧠 <b>10-card set complete!</b> Finish the short comprehension quiz to unlock your badge.`;
+              setTimeout(() => openSetQuiz(award.quizSet), 650);
+            } else {
+              feedback.innerHTML = `🔔 <b>CHING!</b> Passage completed correctly. Press <b>Finish Reading & Reset</b>.`;
+            }
           } else {
             feedback.className = "min-h-[48px] bg-emerald-950/80 border border-emerald-500/50 rounded-2xl p-3 text-center text-xs sm:text-sm font-semibold text-emerald-200 flex items-center justify-center gap-2";
             feedback.innerHTML = `🌟 <b>Great reading!</b> Moving to Sentence ${activeSentenceIndex + 1}...`;
