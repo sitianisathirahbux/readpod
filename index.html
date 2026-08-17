@@ -198,6 +198,10 @@
         <option value="">Loading pupil list...</option>
       </select>
       <p class="text-[10px] text-slate-400">Select the pupil's full name. New pupils may still enter their name above.</p>
+      <div id="selectedPupilBadges" class="hidden bg-violet-950/60 border border-violet-400/30 rounded-xl px-3 py-2">
+        <p class="text-[10px] font-black text-violet-200 mb-1"><i class="fa-solid fa-medal text-amber-400 mr-1"></i> Badges Unlocked</p>
+        <div id="selectedPupilBadgeIcons" class="flex flex-wrap items-center gap-2"></div>
+      </div>
     </div>
 
     <div id="badgePanel" class="bg-gradient-to-r from-violet-950/80 to-indigo-950/80 border border-violet-400/40 p-3 rounded-2xl flex items-center justify-between gap-3">
@@ -209,12 +213,6 @@
     </div>
 
 
-
-    <div class="bg-amber-950/50 border border-amber-400/40 text-amber-100 text-[11px] leading-relaxed px-3 py-2 rounded-xl">
-      <i class="fa-solid fa-circle-info mr-1"></i>
-      Progress shows completion of practice activities, not an official PBD Mastery Level.
-      A pupil's TP requires evidence and teacher validation.
-    </div>
 
     <!-- Meta Filters & Direct Dropdown Selection -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -290,6 +288,17 @@
         </button>
       </div>
 
+      <!-- Card Navigation Controls -->
+      <div class="flex items-center justify-between pt-2 border-t border-slate-700/60 mt-1">
+        <button onclick="prevCard()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border border-slate-700 transition-all cursor-pointer">
+          <i class="fa-solid fa-arrow-left"></i> Previous Card
+        </button>
+        <span id="cardCounterText" class="text-xs font-bold text-slate-400">Card 1 of 16</span>
+        <button onclick="nextCard()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border border-indigo-400/30 transition-all cursor-pointer">
+          Next Card <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+
       <!-- Feedback Display Box -->
       <div id="feedbackBox" class="min-h-[48px] bg-slate-900/80 border border-slate-700/80 rounded-2xl p-3 text-center text-xs font-semibold text-slate-300 flex items-center justify-center gap-2">
         <span>Tap <b>Read Aloud</b> and read into your Whisper Phone!</span>
@@ -306,19 +315,12 @@
           <!-- Dynamically populated sentence items -->
         </div>
       </div>
-    </div>
 
-    <!-- Bottom Card Navigation Controls -->
-    <div class="flex items-center justify-between pt-2 border-t border-slate-700/60 mt-1">
-      <button onclick="prevCard()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border border-slate-700 transition-all cursor-pointer">
-        <i class="fa-solid fa-arrow-left"></i> Prev Card
-      </button>
-
-      <span id="cardCounterText" class="text-xs font-bold text-slate-400">Card 1 of 8</span>
-
-      <button onclick="nextCard()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border border-indigo-400/30 transition-all cursor-pointer">
-        Next Card <i class="fa-solid fa-arrow-right"></i>
-      </button>
+      <div class="bg-amber-950/50 border border-amber-400/40 text-amber-100 text-[11px] leading-relaxed px-3 py-2 rounded-xl">
+        <i class="fa-solid fa-circle-info mr-1"></i>
+        Progress shows completion of practice activities, not an official PBD Mastery Level.
+        A pupil's TP requires evidence and teacher validation.
+      </div>
     </div>
 
     </div>
@@ -623,6 +625,7 @@
     let analyticsLogs = []; // Stores live student records fetched from Google Sheets
     let registeredStudentMap = new Map();
     let registeredStudentProgressMap = new Map();
+    let registeredStudentBadgeMap = new Map();
     let pendingResumeLog = null;
     let autoResumeHandled = false;
     let tpChartInstance = null;
@@ -634,6 +637,7 @@
       studentName = val.trim();
       localStorage.setItem("read_pod_student_name", studentName);
       updateBadgePanel();
+      renderSelectedPupilBadges("");
       const badge = document.getElementById('saveStatusBadge');
       if (badge) {
         badge.className = "text-[10px] whitespace-nowrap bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-lg border border-emerald-500/30 font-bold";
@@ -662,6 +666,7 @@
         const rows = Array.isArray(data) ? data : [];
         const uniqueNames = new Map();
         const latestProgressByName = new Map();
+        const passedBadgesByName = new Map();
 
         rows.forEach((row, rowIndex) => {
           const rawName = String(row.studentName || '').trim();
@@ -682,10 +687,18 @@
               : candidate.rowIndex >= previous.rowIndex);
 
           if (isNewer) latestProgressByName.set(key, candidate);
+
+          const status = String(row.status || "").toLocaleLowerCase();
+          if (status.includes("completed unit and quiz passed")) {
+            const earnedBadge = leaderboardBadgeForActivity(row);
+            if (!passedBadgesByName.has(key)) passedBadgesByName.set(key, new Map());
+            passedBadgesByName.get(key).set(earnedBadge.topic, earnedBadge);
+          }
         });
 
         registeredStudentMap = new Map();
         registeredStudentProgressMap = new Map();
+        registeredStudentBadgeMap = new Map();
         let savedStudentOptionKey = "";
         select.innerHTML = '<option value="">-- Select a registered pupil --</option>';
 
@@ -696,6 +709,7 @@
             const nameKey = rawName.toLocaleLowerCase();
             registeredStudentMap.set(optionKey, rawName);
             registeredStudentProgressMap.set(optionKey, latestProgressByName.get(nameKey)?.row || null);
+            registeredStudentBadgeMap.set(optionKey, Array.from(passedBadgesByName.get(nameKey)?.values() || []));
             const option = document.createElement('option');
             option.value = optionKey;
             option.textContent = rawName;
@@ -709,6 +723,7 @@
           });
 
         renderStudentLeaderboard(rows);
+        renderSelectedPupilBadges(savedStudentOptionKey);
 
         if (savedStudentOptionKey && !autoResumeHandled) {
           autoResumeHandled = true;
@@ -852,8 +867,26 @@
       if (icon) icon.classList.remove('fa-spin');
     }
 
+    function renderSelectedPupilBadges(optionKey) {
+      const panel=document.getElementById("selectedPupilBadges"),icons=document.getElementById("selectedPupilBadgeIcons");
+      if(!panel||!icons)return;
+      if(!optionKey){panel.classList.add("hidden");icons.innerHTML="";return;}
+      const badges=registeredStudentBadgeMap.get(optionKey)||[];
+      panel.classList.remove("hidden");
+      icons.innerHTML="";
+      if(!badges.length){
+        const empty=document.createElement("span");empty.className="text-[10px] font-bold text-slate-400";empty.textContent="🔒 No quiz badges unlocked yet.";icons.appendChild(empty);return;
+      }
+      badges.forEach(badge=>{
+        const item=document.createElement("span");item.className="inline-flex items-center gap-1 bg-amber-500/10 border border-amber-400/30 rounded-lg px-2 py-1 text-[10px] font-bold text-amber-200";
+        const icon=document.createElement("span");icon.className="text-lg leading-none";icon.textContent=badge.icon;icon.title=badge.label;
+        const label=document.createElement("span");label.textContent=badge.label;item.append(icon,label);icons.appendChild(item);
+      });
+    }
+
     function selectRegisteredStudent(optionKey) {
       autoResumeHandled = true;
+      renderSelectedPupilBadges(optionKey);
       const selectedName = registeredStudentMap.get(optionKey);
       if (!selectedName) return;
 
@@ -1334,6 +1367,7 @@
 
       if (nameInput) nameInput.value = "";
       if (pupilSelect) pupilSelect.value = "";
+      renderSelectedPupilBadges("");
       if (finishButton) {
         finishButton.classList.add('hidden');
         finishButton.classList.remove('flex');
