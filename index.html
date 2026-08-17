@@ -816,11 +816,7 @@
           const total=Math.max(0,Number(row.totalSentences)||0),completed=Math.max(0,Number(row.sentencesCompleted)||0),percentage=Math.max(0,Number(row.completionPercentage)||0),status=String(row.status||"").toLocaleLowerCase();
           return percentage>=100||(total>0&&completed>=total)||status.includes("complete")||status.includes("tamat");
         }).length;
-        const badgeMap=new Map(pupil.badges);
-        if(studentName&&pupil.studentName.toLocaleLowerCase()===studentName.toLocaleLowerCase()){
-          getEarnedTopicBadges().forEach(badge=>badgeMap.set(badge.topic||badge.label,badge));
-        }
-        const badges=Array.from(badgeMap.values());
+        const badges=Array.from(pupil.badges.values());
         return {studentName:pupil.studentName,readingCompleted,badges,badgeCount:badges.length};
       }).filter(pupil=>pupil.readingCompleted>0||pupil.badgeCount>0)
         .sort((x,y)=>y.badgeCount-x.badgeCount||y.readingCompleted-x.readingCompleted||leaderboardStudentLabel(x.studentName).localeCompare(leaderboardStudentLabel(y.studentName)))
